@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Inventaire</title>
+<style>
+:root{
+  --ink:#0E1B1A; --ink2:#16302D; --ink3:#1B2826; --line-d:#2B4D49; --muted-d:#8FA9A4; --text-d:#EAF2F0;
+  --bg:#F3F6F5; --card:#FFFFFF; --line:#DCE4E2; --line2:#ECF0EF; --muted:#55625F; --text2:#3A4745;
+  --teal:#0B6E66; --teal-soft:#E0F2EE; --mint:#3DDC97; --mint-ink:#06231A;
+  --warn-bg:#FDEFD9; --warn:#7A3E00; --warn-line:#F1D9AE; --warn-box:#FFF6E8; --warn-b:#D98A1E;
+  --bad:#B42318; --blue-bg:#E0ECF8; --blue:#1D4F86; --ok:#1C6B3A; --ok-bg:#E1F3E7;
+  --body:"Manrope",system-ui,-apple-system,Roboto,sans-serif; --display:"Sora",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  --top:env(safe-area-inset-top,0px); --bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden}
+body{font:15px/1.45 var(--body);color:var(--ink);background:var(--bg)}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+.screen{position:fixed;inset:0;display:flex;flex-direction:column}
+.screen[hidden]{display:none!important}
+.light{background:var(--bg);color:var(--ink)}
+.dark{background:#0A1413;color:var(--text-d)}
+.topbar{display:flex;align-items:center;gap:10px;padding:calc(var(--top) + 12px) 16px 12px;background:var(--card);border-bottom:1px solid var(--line)}
+.topbar h1{margin:0;font-family:var(--display);font-size:20px;font-weight:600;flex-grow:1}
+.iconbtn{width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;flex:none}
+.dark .iconbtn{background:var(--ink2)}
+.scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.bottom{background:var(--card);border-top:1px solid var(--line);padding:12px 16px calc(var(--bot) + 16px);display:flex;flex-direction:column;gap:10px}
+.big{height:56px;border:0;border-radius:16px;background:var(--teal);color:#fff;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
+.big:disabled{opacity:.5}
+.big.mint{background:var(--mint);color:var(--mint-ink)}
+.ghost{height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;padding:0 14px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.row{display:flex;align-items:center;gap:8px}
+.between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.chip{border-radius:999px;padding:6px 12px;font-size:13px;font-weight:700}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(var(--bot) + 100px);background:var(--ink);color:#fff;padding:14px 16px;border-radius:14px;font-weight:600;z-index:90;box-shadow:0 10px 30px rgba(0,0,0,.3);text-align:center}
+.toast.err{background:#5A1A14}
+/* camera */
+.cam-top{display:flex;align-items:center;justify-content:space-between;padding:calc(var(--top) + 10px) 16px 10px}
+.status{display:flex;align-items:center;gap:8px;background:var(--ink2);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600;border:0;color:inherit}
+.sdot{width:8px;height:8px;border-radius:50%;background:#7D8F8B}
+.sdot.on{background:var(--mint)} .sdot.wait{background:#F0C46A}
+.viewfinder{position:relative;margin:0 12px;flex:1 1 auto;min-height:240px;border-radius:24px;background:var(--ink3);overflow:hidden}
+.viewfinder video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.corner{position:absolute;width:40px;height:40px;border:4px solid var(--mint)}
+.c1{left:12%;top:12%;border-right:0;border-bottom:0;border-top-left-radius:14px}
+.c2{right:12%;top:12%;border-left:0;border-bottom:0;border-top-right-radius:14px}
+.c3{left:12%;bottom:12%;border-right:0;border-top:0;border-bottom-left-radius:14px}
+.c4{right:12%;bottom:12%;border-left:0;border-top:0;border-bottom-right-radius:14px}
+.vf-chip{position:absolute;background:rgba(10,20,19,.82);border-radius:12px;padding:8px 12px;font-size:12px;font-weight:600}
+.vf-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:var(--muted-d)}
+.flashfx{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .25s}
+.tray{padding:14px 16px 0;display:flex;flex-direction:column;gap:10px}
+.groups{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;min-height:74px}
+.group{display:flex;flex-direction:column;gap:6px;flex:none}
+.thumbs{display:flex;gap:4px;background:var(--ink2);padding:4px;border-radius:12px}
+.group.cur .thumbs{outline:2px solid var(--mint)}
+.thumbs button{width:46px;height:46px;border-radius:8px;border:0;padding:0;overflow:hidden;position:relative;background:#223}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbs button.arm::after{content:"×";position:absolute;inset:0;background:rgba(180,35,24,.8);color:#fff;font-size:24px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.group span{font-size:11px;color:var(--muted-d);font-weight:700}
+.group.cur span{color:var(--mint)}
+.next{border:1px solid var(--mint);background:transparent;color:var(--mint);font-weight:700;font-size:13px;border-radius:999px;padding:0 14px;height:36px;display:flex;align-items:center;gap:6px}
+.controls{display:flex;align-items:center;justify-content:space-between;padding:12px 26px calc(var(--bot) + 24px)}
+.galbtn{width:56px;height:56px;border-radius:16px;background:var(--ink2);color:var(--text-d);border:0;display:flex;align-items:center;justify-content:center}
+.shutter{width:82px;height:82px;border-radius:50%;border:4px solid var(--text-d);background:transparent;padding:5px;display:flex}
+.shutter span{flex:1;border-radius:50%;background:var(--text-d)}
+.shutter:active span{background:var(--mint)}
+.analyse{height:56px;border-radius:16px;background:var(--mint);color:var(--mint-ink);font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px;padding:0 16px;border:0}
+.analyse:disabled{opacity:.4}
+.analyse b{background:var(--mint-ink);color:var(--mint);border-radius:999px;font-size:12px;padding:2px 8px}
+/* selection */
+.banner{margin:14px 16px 0;background:var(--teal-soft);border-radius:14px;padding:12px 14px;display:flex;gap:10px;font-size:13px;color:#0A4B45}
+.grid3{padding:14px 16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.cell{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#D3DEE8;border:0;padding:0}
+.cell img{width:100%;height:100%;object-fit:cover;display:block}
+.cell .n{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:var(--teal);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.cell .x{position:absolute;bottom:6px;right:6px;width:30px;height:30px;border-radius:50%;background:rgba(14,27,26,.75);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center}
+/* busy */
+.busy{position:fixed;inset:0;background:rgba(10,20,19,.92);color:var(--text-d);z-index:80;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center}
+.spinner{width:48px;height:48px;border-radius:50%;border:4px solid var(--ink2);border-top-color:var(--mint);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation:none}}
+/* results */
+.summary{display:flex;gap:8px;flex-wrap:wrap;padding:0 16px 14px;background:var(--card);border-bottom:1px solid var(--line)}
+.list{padding:14px;display:flex;flex-direction:column;gap:12px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.pcard.w{border-color:var(--warn-line)}
+.pcard.np{border:1.5px solid var(--teal)}
+.pcard.off{opacity:.5}
+.phead{display:flex;gap:12px;align-items:flex-start}
+.stack{position:relative;flex:none;width:58px;height:58px}
+.stack img{position:absolute;width:52px;height:52px;border-radius:10px;object-fit:cover;border:2px solid #fff}
+.stack img:first-child{left:6px;top:0}
+.stack img:nth-child(2){left:0;top:6px}
+.stack .cnt{position:absolute;right:-4px;bottom:-4px;background:var(--ink);color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:2px 7px}
+.pname{width:100%;border:0;border-bottom:1px dashed transparent;font:800 16px var(--body);color:var(--ink);padding:2px 0;background:transparent}
+.pname:focus{border-bottom-color:var(--teal);outline:none}
+.sub{font-size:13px;color:var(--muted)}
+.incl{width:44px;height:44px;margin:-8px -8px 0 0;display:flex;align-items:center;justify-content:center;flex:none}
+.incl input{width:22px;height:22px;accent-color:var(--teal)}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fld{background:var(--bg);border-radius:10px;padding:7px 10px;display:flex;flex-direction:column;border:1.5px solid transparent}
+.fld.w{background:var(--warn-box);border-color:var(--warn-b)}
+.fld span{font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+.fld.w span{color:var(--warn)}
+.fld input,.fld select{border:0;background:transparent;font:600 14px var(--body);color:var(--ink);padding:2px 0;width:100%;min-width:0}
+.fld input.mono{font:400 14px var(--mono)}
+.tag{font-size:11px;font-weight:800;margin-left:4px}
+.props{display:flex;flex-wrap:wrap;gap:6px}
+.props button{height:38px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:700;font-size:13px;padding:0 14px}
+.props button.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.props button.write{border-style:dashed;color:var(--teal)}
+.steppers{display:flex;gap:10px}
+.stp{flex:1;display:flex;flex-direction:column;gap:4px}
+.stp>span{font-size:12px;font-weight:700;color:var(--muted)}
+.stp div{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border-radius:12px;padding:2px}
+.stp button{width:40px;height:40px;border:0;background:transparent;font-size:20px;color:var(--ink)}
+.stp b{font-size:16px}
+.badge{font-size:12px;font-weight:700;border-radius:6px;padding:3px 8px;align-self:flex-start}
+/* settings */
+.sec{display:flex;flex-direction:column;gap:8px}
+.sec h2{margin:0 4px;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.pcbox{background:var(--ink);color:var(--text-d);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.seg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));background:var(--bg);border-radius:12px;padding:4px}
+.seg button{height:40px;border:0;border-radius:9px;background:transparent;font-weight:700;font-size:14px;color:var(--muted)}
+.seg button.on{background:#fff;box-shadow:0 1px 3px rgba(14,27,26,.12);color:var(--ink);font-weight:800}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;color:var(--text2)}
+label.f input,label.f select{height:46px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#F9FBFA;font:600 15px var(--body);color:var(--ink);width:100%}
+label.f input.mono{font:400 14px var(--mono)}
+.tog{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line2);font-weight:600}
+.tog:last-child{border-bottom:0}
+.tog input{width:22px;height:22px;accent-color:var(--teal);flex:none}
+/* connect */
+.conn{flex:1;display:flex;flex-direction:column;gap:18px;padding:calc(var(--top) + 40px) 22px calc(var(--bot) + 24px);overflow-y:auto}
+.conn h1{margin:0;font-family:var(--display);font-size:28px;line-height:1.15}
+.pcitem{display:flex;align-items:center;gap:12px;background:var(--ink2);border-radius:16px;padding:14px;border:0;color:inherit;text-align:left;width:100%}
+.pcitem b{display:block;font-size:16px}
+.pcitem span{font-family:var(--mono);font-size:12px;color:var(--muted-d)}
+.codebig{font-family:var(--mono);font-size:48px;letter-spacing:.25em;text-align:center;color:var(--mint)}
+.conn input{height:50px;border-radius:12px;border:1px solid var(--line-d);background:var(--ink2);color:var(--text-d);font:400 16px var(--mono);padding:0 14px;width:100%}
+.linkbtn{background:none;border:0;color:var(--mint);font-weight:700;padding:10px 0;text-align:left}
+</style>
+</head>
+<body>
+
+<!-- ============ CONNECT ============ -->
+<section class="screen dark" id="scr-connect" hidden>
+  <div class="conn">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <span style="font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mint)">Inventaire Clinique</span>
+      <h1 id="cn-title">Connexion au PC</h1>
+      <p style="margin:0;color:#B8CCC8" id="cn-text">Le téléphone et le PC doivent être sur le même Wi-Fi, et le programme Inventaire ouvert sur le PC.</p>
+    </div>
+    <div id="cn-body" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div style="flex-grow:1"></div>
+    <button class="linkbtn" id="cn-skip">Continuer sans PC pour l'instant</button>
+  </div>
+</section>
+
+<!-- ============ CAMERA ============ -->
+<section class="screen dark" id="scr-camera">
+  <div class="cam-top">
+    <button class="status" id="pcStatus"><span class="sdot" id="pcDot"></span><span id="pcLabel">PC non connecté</span></button>
+    <div class="row">
+      <button class="iconbtn" id="torchBtn" aria-label="Lampe" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg></button>
+      <button class="iconbtn" id="openSettings" aria-label="Réglages"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+  </div>
+  <div class="viewfinder">
+    <video id="video" autoplay playsinline muted></video>
+    <div class="vf-msg" id="vfMsg">Touchez « Démarrer la caméra »</div>
+    <div class="corner c1"></div><div class="corner c2"></div><div class="corner c3"></div><div class="corner c4"></div>
+    <div class="vf-chip" id="codeChip" style="left:14px;bottom:14px" hidden><div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--mint)">Code détecté</div><div class="mono" id="codeVal" style="font-size:13px"></div></div>
+    <div class="vf-chip" id="angleChip" style="right:14px;top:14px;border-radius:999px">Produit 1 · angle 1</div>
+    <div class="flashfx" id="flashfx"></div>
+  </div>
+  <div class="tray">
+    <div class="between">
+      <span style="font-size:13px;color:var(--muted-d);font-weight:600" id="trayInfo">Aucune photo</span>
+      <button class="next" id="nextProduct"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Produit suivant</button>
+    </div>
+    <div class="groups" id="groups"></div>
+  </div>
+  <div class="controls">
+    <button class="galbtn" id="galleryBtn" aria-label="Choisir dans la galerie"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+    <button class="shutter" id="shutter" aria-label="Prendre une photo"><span></span></button>
+    <button class="analyse" id="analyseBtn" disabled>Analyser <b id="nPhotos">0</b></button>
+  </div>
+  <input type="file" id="galleryInput" accept="image/*" multiple hidden>
+</section>
+
+<!-- ============ SELECTION (galerie) ============ -->
+<section class="screen light" id="scr-select" hidden>
+  <div class="topbar">
+    <button class="iconbtn" data-back aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div style="flex-grow:1;display:flex;flex-direction:column"><h1>Photos à analyser</h1><span class="hint" id="selInfo"></span></div>
+    <button class="ghost" id="selAdd" style="height:40px">+ Ajouter</button>
+  </div>
+  <div class="scroll">
+    <div class="banner"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0B6E66" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span>Mélangez librement plusieurs produits. L'IA regroupe les photos d'un même coffret et ne le compte qu'une fois.</span></div>
+    <div class="grid3" id="selGrid"></div>
+  </div>
+  <div class="bottom">
+    <div class="between hint"><span id="selSize"></span><span>Touchez une photo pour la retirer</span></div>
+    <button class="big" id="selAnalyse"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.6L19.5 10l-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.4z"/></svg><span id="selBtnTxt">Analyser</span></button>
+  </div>
+</section>
+
+<!-- ============ RESULTS ============ -->
+<section class="screen light" id="scr-results" hidden>
+  <div class="topbar" style="border-bottom:0;padding-bottom:8px">
+    <button class="iconbtn" data-back aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <h1>Produits détectés</h1>
+  </div>
+  <div class="summary" id="summary"></div>
+  <div class="scroll"><div class="list" id="plist"></div></div>
+  <div class="bottom">
+    <div class="between hint"><span id="dest"></span><span id="totals"></span></div>
+    <button class="big" id="sendBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg><span>Valider et envoyer au PC</span></button>
+  </div>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section class="screen light" id="scr-settings" hidden>
+  <div class="topbar">
+    <button class="iconbtn" data-back aria-label="Retour"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <h1>Réglages</h1>
+  </div>
+  <div class="scroll"><div style="padding:14px;display:flex;flex-direction:column;gap:18px;padding-bottom:calc(var(--bot) + 30px)">
+    <section class="sec"><h2>Connexion au PC</h2>
+      <div class="pcbox">
+        <div class="row" style="gap:12px">
+          <div style="width:44px;height:44px;border-radius:12px;background:var(--ink2);display:flex;align-items:center;justify-content:center;color:var(--mint);flex:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <div style="flex-grow:1;display:flex;flex-direction:column;min-width:0"><b id="stPcName" style="font-size:16px">Aucun PC</b><span class="mono" id="stPcAddr" style="font-size:12px;color:var(--muted-d)"></span></div>
+          <span id="stPcState" style="font-size:12px;font-weight:700"></span>
+        </div>
+        <div class="row">
+          <button class="big mint" style="height:44px;font-size:14px;border-radius:12px" id="stSearch">Rechercher le PC</button>
+          <button class="ghost" style="background:transparent;color:var(--text-d);border-color:var(--line-d)" id="stTest">Tester</button>
+        </div>
+        <span id="stQueue" style="font-size:13px;color:var(--muted-d)"></span>
+      </div>
+    </section>
+    <section class="sec"><h2>Intelligence artificielle</h2>
+      <div class="box">
+        <div class="seg" role="group" aria-label="Service d'IA"><button data-prov="gemini">Gemini · gratuit</button><button data-prov="claude">Claude · payant</button></div>
+        <label class="f"><span id="keyLabel">Clé API</span><input id="stKey" type="password" class="mono" autocomplete="off" spellcheck="false"></label>
+        <label class="f">Modèle<select id="stModel"></select></label>
+        <span class="hint" id="stKeyHint"></span>
+      </div>
+    </section>
+    <section class="sec"><h2>Analyse</h2>
+      <div class="box" style="padding:0;gap:0">
+        <label class="tog">Lire les codes-barres sur le téléphone<input type="checkbox" id="stBarcode"></label>
+        <label class="tog" id="stWebRow">Chercher sur Internet le nombre de flacons manquant<input type="checkbox" id="stWeb"></label>
+        <label class="tog">Qualité des photos<select id="stQuality" style="height:36px;border:1px solid var(--line);border-radius:10px;background:#F9FBFA;font:600 14px var(--body)"><option value="1600">Haute</option><option value="1280">Normale</option><option value="1024">Économique</option></select></label>
+      </div>
+    </section>
+    <p class="hint" style="text-align:center" id="stVersion"></p>
+  </div></div>
+</section>
+
+<div id="busy" class="busy" hidden><div class="spinner"></div><b id="busyTitle" style="font-size:18px">Analyse en cours…</b><span id="busyText" style="color:#B8CCC8"></span><button class="ghost" id="busyCancel" style="background:transparent;color:var(--text-d);border-color:var(--line-d)">Annuler</button></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const B = window.AndroidBridge || null;
+const APP_VERSION = B && B.appVersion ? B.appVersion() : "2.0";
+const CATS = ["Réactifs","Consommables","Médicaments","Produits de contraste","Contrôles et calibrants","Autre"];
+
+/* ===================== state ===================== */
+const cfg = Object.assign({provider:"gemini", keyGemini:"", keyClaude:"", modelGemini:"gemini-flash-lite-latest", modelClaude:"claude-sonnet-5-5",
+  geminiModels:null, barcode:true, web:true, quality:"1600", pc:null, skipConnect:false}, store.get("inv2.cfg", {}));
+const saveCfg = () => store.set("inv2.cfg", cfg);
+let queue = store.get("inv2.queue", []);              // envois en attente
+let catalog = store.get("inv2.catalog", []);          // produits connus du PC
+let photos = [];                                       // {id, blob, url, group, src:"camera"|"galerie", code}
+let groupNo = 1, products = [], screenStack = ["camera"], pcOnline = false;
+
+/* ===================== bridge / http ===================== */
+const pending = {}; let reqId = 0;
+window.__bridgeCb = (id, status, text) => { const p = pending[id]; if (p){ delete pending[id]; p({status, text}); } };
+function http(method, url, body, headers = {}){
+  if (B && B.http){
+    return new Promise(res => {
+      const id = "r" + (++reqId); pending[id] = res;
+      B.http(id, method, url, JSON.stringify(headers), body == null ? "" : body);
+      setTimeout(() => { if (pending[id]){ delete pending[id]; res({status:0, text:""}); } }, 60000);
+    });
+  }
+  return fetch(url, {method, headers, body}).then(async r => ({status:r.status, text:await r.text()})).catch(() => ({status:0, text:""}));
+}
+async function pcApi(method, path, data, timeoutOk){
+  if (!cfg.pc) throw {msg:"Aucun PC connecté"};
+  const r = await http(method, `http://${cfg.pc.ip}:${cfg.pc.port}${path}`, data ? JSON.stringify(data) : null,
+    {"Content-Type":"application/json", "X-Token": cfg.pc.token || "", "X-App-Version": APP_VERSION});
+  let j = {}; try{ j = JSON.parse(r.text || "{}"); }catch(e){}
+  if (r.status === 0) throw {msg:"PC injoignable", offline:true};
+  if (r.status === 401) throw {msg:"Ce téléphone n'est plus autorisé sur le PC", unauth:true};
+  if (r.status >= 400) throw {msg:j.error || ("Erreur " + r.status)};
+  return j;
+}
+function discover(){
+  return new Promise(res => {
+    if (!B || !B.discover) return res([]);
+    const id = "d" + (++reqId); pending[id] = r => { try{ res(JSON.parse(r.text || "[]")); }catch(e){ res([]); } };
+    B.discover(id);
+    setTimeout(() => { if (pending[id]){ delete pending[id]; res([]); } }, 5000);
+  });
+}
+
+/* ===================== UI helpers ===================== */
+function show(name, push = true){
+  document.querySelectorAll(".screen").forEach(s => s.hidden = s.id !== "scr-" + name);
+  if (push && screenStack[screenStack.length - 1] !== name) screenStack.push(name);
+  if (name === "camera") startCamera(); else stopCamera();
+}
+function back(){ if (screenStack.length > 1) screenStack.pop(); show(screenStack[screenStack.length - 1], false); }
+document.querySelectorAll("[data-back]").forEach(b => b.onclick = back);
+window.__onBack = () => { if (!$("busy").hidden) return true; if (screenStack.length > 1){ back(); return true; } return false; };
+let toastT;
+function toast(msg, err){ document.querySelectorAll(".toast").forEach(t => t.remove()); clearTimeout(toastT);
+  const t = document.createElement("div"); t.className = "toast" + (err ? " err" : ""); t.setAttribute("role","status"); t.textContent = msg;
+  document.body.append(t); toastT = setTimeout(() => t.remove(), 3600); }
+function busy(on, title, text){ $("busy").hidden = !on; if (title) $("busyTitle").textContent = title; $("busyText").textContent = text || ""; }
+
+/* ===================== PC status ===================== */
+function renderPc(){
+  const has = !!(cfg.pc && cfg.pc.token);
+  $("pcDot").className = "sdot " + (has ? (pcOnline ? "on" : "wait") : "");
+  $("pcLabel").textContent = !has ? "PC non connecté" : (pcOnline ? cfg.pc.name + " connecté" : cfg.pc.name + " hors ligne") + (queue.length ? ` · ${queue.length} en attente` : "");
+  $("stPcName").textContent = has ? cfg.pc.name : "Aucun PC";
+  $("stPcAddr").textContent = cfg.pc ? `${cfg.pc.ip} : ${cfg.pc.port}` : "";
+  $("stPcState").textContent = has ? (pcOnline ? "● Connecté" : "● Hors ligne") : "";
+  $("stPcState").style.color = pcOnline ? "var(--mint)" : "#F0C46A";
+  $("stQueue").textContent = queue.length ? `${queue.length} envoi(s) en attente : ils partiront dès que le PC sera joignable.` : "Aucun envoi en attente.";
+}
+async function ping(){
+  if (!cfg.pc || !cfg.pc.token){ pcOnline = false; renderPc(); return; }
+  try{
+    const d = await pcApi("GET", "/api/catalog");
+    pcOnline = true; catalog = d.products || []; store.set("inv2.catalog", catalog);
+    if (d.name && d.name !== cfg.pc.name){ cfg.pc.name = d.name; saveCfg(); }
+    await flushQueue();
+  }catch(e){
+    pcOnline = false;
+    if (e.unauth){ cfg.pc.token = ""; saveCfg(); toast("Le PC a retiré ce téléphone. Reconnectez-le dans Réglages.", true); }
+    else if (!e.offline){ /* autre erreur : réessai plus tard */ }
+    // le PC a peut-être changé d'adresse : on le cherche
+    if (e.offline){ const f = await discover(); const same = f.find(x => x.name === cfg.pc.name) || (f.length === 1 ? f[0] : null);
+      if (same && same.ip !== cfg.pc.ip){ cfg.pc.ip = same.ip; cfg.pc.port = same.port; saveCfg(); } }
+  }
+  renderPc();
+}
+async function flushQueue(){
+  while (queue.length){
+    const job = queue[0];
+    const d = await pcApi("POST", "/api/receive", {items: job.items});
+    queue.shift(); store.set("inv2.queue", queue);
+    toast(`Envoi en attente transmis : ${d.results.length} produit(s)`);
+  }
+}
+setInterval(ping, 20000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) ping(); });
+
+/* ===================== connect / pairing ===================== */
+let pairAbort = false;
+async function openConnect(){
+  show("connect");
+  pairAbort = false;
+  $("cn-title").textContent = "Connexion au PC";
+  $("cn-text").textContent = "Le téléphone et le PC doivent être sur le même Wi-Fi, et le programme Inventaire ouvert sur le PC.";
+  $("cn-body").innerHTML = `<div class="row" style="gap:12px;color:#B8CCC8"><div class="spinner" style="width:24px;height:24px;border-width:3px"></div>Recherche du PC sur le Wi-Fi…</div>`;
+  const found = await discover();
+  const list = found.map((p,i) => `<button class="pcitem" data-pc="${i}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3DDC97" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><div><b>${esc(p.name)}</b><span>${esc(p.ip)} : ${p.port}</span></div></button>`).join("");
+  $("cn-body").innerHTML = (found.length ? `<span style="font-weight:700">PC trouvé${found.length > 1 ? "s" : ""} :</span>${list}` : `<span style="color:#F0C46A;font-weight:700">Aucun PC trouvé automatiquement.</span><span style="color:#B8CCC8;font-size:14px">Vérifiez que le programme est ouvert sur le PC, puis réessayez, ou saisissez l'adresse affichée sur le PC (menu Téléphones).</span>`)
+    + `<button class="ghost" id="cn-retry" style="background:transparent;color:var(--text-d);border-color:var(--line-d)">Rechercher à nouveau</button>
+       <label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;color:#B8CCC8;margin-top:10px">Adresse du PC (ex. 192.168.1.20)<input id="cn-ip" inputmode="decimal" placeholder="192.168.1.20" value="${esc(cfg.pc?.ip || "")}"></label>
+       <button class="big mint" id="cn-manual">Se connecter à cette adresse</button>`;
+  found.forEach((p,i) => document.querySelector(`[data-pc="${i}"]`).onclick = () => pair(p.ip, p.port));
+  $("cn-retry").onclick = openConnect;
+  $("cn-manual").onclick = async () => {
+    let v = $("cn-ip").value.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, ""); if (!v) return;
+    let [ip, port] = v.split(":"); port = +port || 8765;
+    const r = await http("GET", `http://${ip}:${port}/api/hello`);
+    let j = {}; try{ j = JSON.parse(r.text); }catch(e){}
+    if (j.app !== "inventaire-clinique"){ toast("Aucun programme Inventaire à cette adresse.", true); return; }
+    pair(ip, port);
+  };
+}
+async function pair(ip, port){
+  const code = String(Math.floor(1000 + Math.random() * 9000));
+  const name = (B && B.deviceName ? B.deviceName() : "Téléphone");
+  const r = await http("POST", `http://${ip}:${port}/api/pair`, JSON.stringify({name, code}), {"Content-Type":"application/json"});
+  let j = {}; try{ j = JSON.parse(r.text); }catch(e){}
+  if (!j.id){ toast("Le PC ne répond pas. Vérifiez le Wi-Fi.", true); return; }
+  $("cn-title").textContent = "Autorisez ce téléphone sur le PC";
+  $("cn-text").textContent = `Sur « ${j.name} », menu Téléphones : vérifiez que ce code s'affiche, puis cliquez sur Autoriser.`;
+  $("cn-body").innerHTML = `<div class="codebig">${code}</div><div class="row" style="gap:12px;justify-content:center;color:#B8CCC8"><div class="spinner" style="width:22px;height:22px;border-width:3px"></div>En attente de l'autorisation…</div>
+    <button class="ghost" id="cn-cancel" style="background:transparent;color:var(--text-d);border-color:var(--line-d)">Annuler</button>`;
+  $("cn-cancel").onclick = () => { pairAbort = true; openConnect(); };
+  for (let i = 0; i < 200 && !pairAbort; i++){
+    await new Promise(r => setTimeout(r, 1500));
+    const s = await http("GET", `http://${ip}:${port}/api/pair/${j.id}`);
+    let st = {}; try{ st = JSON.parse(s.text); }catch(e){}
+    if (st.status === "ok"){
+      cfg.pc = {ip, port, name: st.name || j.name, token: st.token}; cfg.skipConnect = false; saveCfg();
+      pcOnline = true; renderPc(); toast("Connecté à " + cfg.pc.name); screenStack = ["camera"]; show("camera", false); ping(); return;
+    }
+    if (st.status === "refused"){ toast("Connexion refusée sur le PC.", true); openConnect(); return; }
+    if (st.status === "expired"){ toast("La demande a expiré. Recommencez.", true); openConnect(); return; }
+  }
+}
+$("cn-skip").onclick = () => { pairAbort = true; cfg.skipConnect = true; saveCfg(); screenStack = ["camera"]; show("camera", false); };
+
+/* ===================== camera ===================== */
+let stream = null, track = null, torch = false, detector = null, detectTimer = null, lastCode = "";
+try{ if ("BarcodeDetector" in window) detector = new BarcodeDetector({formats:["ean_13","ean_8","code_128","data_matrix","qr_code","upc_a","code_39"]}); }catch(e){ detector = null; }
+async function startCamera(){
+  if (stream) return;
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment", width:{ideal:1920}, height:{ideal:1080}}, audio:false});
+    track = stream.getVideoTracks()[0];
+    $("video").srcObject = stream; $("vfMsg").hidden = true;
+    if (detector && cfg.barcode) detectTimer = setInterval(scanLive, 700);
+  }catch(e){
+    $("vfMsg").hidden = false;
+    $("vfMsg").innerHTML = `<div style="display:flex;flex-direction:column;gap:12px;align-items:center"><span>La caméra n'est pas accessible. Autorisez-la dans les paramètres Android de l'application, ou utilisez la galerie.</span><button class="next" id="retryCam">Réessayer</button></div>`;
+    $("retryCam").onclick = () => { stream = null; startCamera(); };
+  }
+}
+function stopCamera(){ if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; track = null; } clearInterval(detectTimer); torch = false; $("torchBtn").setAttribute("aria-pressed","false"); }
+async function scanLive(){
+  const v = $("video"); if (!v.videoWidth || !detector) return;
+  try{ const r = await detector.detect(v); if (r.length){ lastCode = r.sort((a,b) => b.rawValue.length - a.rawValue.length)[0].rawValue; $("codeChip").hidden = false; $("codeVal").textContent = lastCode.replace(/[\x1d]/g," ").slice(0,40); } }catch(e){}
+}
+$("torchBtn").onclick = async () => {
+  if (!track) return;
+  try{ torch = !torch; await track.applyConstraints({advanced:[{torch}]}); $("torchBtn").setAttribute("aria-pressed", String(torch)); $("torchBtn").style.background = torch ? "var(--mint)" : ""; $("torchBtn").style.color = torch ? "var(--mint-ink)" : ""; }
+  catch(e){ torch = false; toast("Lampe non disponible sur ce téléphone", true); }
+};
+function canvasBlob(src, w, h, max){
+  const s = Math.min(1, max / Math.max(w, h)), c = document.createElement("canvas");
+  c.width = Math.round(w * s); c.height = Math.round(h * s);
+  c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(r, "image/jpeg", 0.86));
+}
+$("shutter").onclick = async () => {
+  const v = $("video"); if (!v.videoWidth){ toast("La caméra n'est pas prête", true); return; }
+  const fx = $("flashfx"); fx.style.transition = "none"; fx.style.opacity = .7; requestAnimationFrame(() => { fx.style.transition = "opacity .25s"; fx.style.opacity = 0; });
+  if (navigator.vibrate) navigator.vibrate(30);
+  const blob = await canvasBlob(v, v.videoWidth, v.videoHeight, +cfg.quality);
+  addPhoto(blob, groupNo, "camera", lastCode); lastCode = ""; $("codeChip").hidden = true;
+};
+$("nextProduct").onclick = () => { if (photos.some(p => p.group === groupNo)){ groupNo++; renderTray(); } };
+function addPhoto(blob, group, src, code){ photos.push({id: Math.random().toString(36).slice(2), blob, url: URL.createObjectURL(blob), group, src, code: code || ""}); renderTray(); }
+function removePhoto(id){ const p = photos.find(x => x.id === id); if (p) URL.revokeObjectURL(p.url); photos = photos.filter(x => x.id !== id); renderTray(); }
+function renderTray(){
+  const groups = [...new Set(photos.map(p => p.group))];
+  const nProd = new Set(photos.filter(p => p.src === "camera").map(p => p.group)).size + (photos.some(p => p.src === "galerie") ? 1 : 0);
+  $("trayInfo").textContent = photos.length ? `${photos.length} photo(s) · ${groups.filter(g => g !== "G").length} produit(s)${photos.some(p => p.src === "galerie") ? " + galerie" : ""}` : "Aucune photo";
+  $("nPhotos").textContent = photos.length; $("analyseBtn").disabled = !photos.length;
+  const curCount = photos.filter(p => p.group === groupNo).length;
+  $("angleChip").textContent = `Produit ${groupNo} · angle ${curCount + 1}`;
+  const gs = groups.filter(g => g !== "G"); if (!gs.includes(groupNo)) gs.push(groupNo);
+  $("groups").innerHTML = gs.map(g => {
+    const ps = photos.filter(p => p.group === g);
+    return `<div class="group ${g === groupNo ? "cur" : ""}"><div class="thumbs">${ps.length ? ps.map(p => `<button data-ph="${p.id}" aria-label="Photo, toucher deux fois pour retirer"><img src="${p.url}" alt=""></button>`).join("") : `<button style="background:transparent;border:1.5px dashed var(--line-d)" aria-hidden="true" tabindex="-1"></button>`}</div><span>Produit ${g}${g === groupNo ? " · en cours" : ""}</span></div>`;
+  }).join("") + (photos.some(p => p.group === "G") ? `<div class="group"><div class="thumbs">${photos.filter(p => p.group === "G").slice(0,3).map(p => `<button data-ph="${p.id}"><img src="${p.url}" alt=""></button>`).join("")}</div><span>Galerie (${photos.filter(p => p.group === "G").length})</span></div>` : "");
+  $("groups").querySelectorAll("[data-ph]").forEach(b => b.onclick = () => { if (b.classList.contains("arm")) removePhoto(b.dataset.ph); else { b.classList.add("arm"); setTimeout(() => b.classList.remove("arm"), 2500); } });
+  renderSelect();
+}
+$("galleryBtn").onclick = () => $("galleryInput").click();
+$("selAdd").onclick = () => $("galleryInput").click();
+$("galleryInput").onchange = async e => {
+  const files = [...e.target.files]; e.target.value = "";
+  if (!files.length) return;
+  busy(true, "Préparation des photos…", "");
+  for (const f of files.slice(0, 30)){
+    try{ const bmp = await createImageBitmap(f); addPhoto(await canvasBlob(bmp, bmp.width, bmp.height, +cfg.quality), "G", "galerie"); }catch(err){}
+  }
+  busy(false); show("select");
+};
+function renderSelect(){
+  $("selGrid").innerHTML = photos.map((p,i) => `<button class="cell" data-rm="${p.id}" aria-label="Retirer la photo ${i+1}"><img src="${p.url}" alt=""><span class="n">${i+1}</span><span class="x">×</span></button>`).join("");
+  $("selGrid").querySelectorAll("[data-rm]").forEach(b => b.onclick = () => removePhoto(b.dataset.rm));
+  const mb = photos.reduce((s,p) => s + p.blob.size, 0) / 1048576;
+  $("selInfo").textContent = `${photos.length} sélectionnée(s)`; $("selSize").textContent = `≈ ${mb.toFixed(1).replace(".", ",")} Mo`;
+  $("selBtnTxt").textContent = `Analyser ${photos.length} photo(s)`; $("selAnalyse").disabled = !photos.length;
+}
+$("analyseBtn").onclick = () => analyse();
+$("selAnalyse").onclick = () => analyse();
+
+/* ===================== AI ===================== */
+const blobToB64 = b => new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result.split(",")[1]); f.readAsDataURL(b); });
+let aiCtl = null;
+$("busyCancel").onclick = () => { if (aiCtl) aiCtl.abort(); busy(false); };
+async function callGemini(imgs, prompt){
+  const key = cfg.keyGemini; if (!key) throw {msg:"Ajoutez votre clé Google Gemini dans Réglages (gratuite sur aistudio.google.com).", settings:true};
+  const parts = [];
+  imgs.forEach((b64, i) => { parts.push({text:`Photo ${i+1} :`}); parts.push({inline_data:{mime_type:"image/jpeg", data:b64}}); });
+  parts.push({text:prompt});
+  aiCtl = new AbortController();
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(cfg.modelGemini) + ":generateContent", {
+    method:"POST", signal:aiCtl.signal, headers:{"content-type":"application/json", "x-goog-api-key":key},
+    body: JSON.stringify({contents:[{role:"user", parts}], generationConfig:{temperature:0.1, responseMimeType:"application/json"}})});
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok){
+    const m = data?.error?.message || res.status;
+    if (res.status === 400 && /API key/i.test(m)) throw {msg:"Clé Gemini refusée. Vérifiez-la dans Réglages.", settings:true};
+    if (res.status === 403) throw {msg:"Clé Gemini refusée ou service indisponible dans votre pays.", settings:true};
+    if (res.status === 404){ refreshGeminiModels(); throw {msg:"Ce modèle Gemini n'existe plus. Choisissez-en un autre dans Réglages.", settings:true}; }
+    if (res.status === 429) throw {msg:"Limite gratuite atteinte. Patientez une minute, ou choisissez Flash-Lite dans Réglages."};
+    throw {msg:"L'analyse a échoué (" + m + ")."};
+  }
+  return (data.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("");
+}
+async function callClaude(imgs, prompt){
+  const key = cfg.keyClaude; if (!key) throw {msg:"Ajoutez votre clé API Claude dans Réglages.", settings:true};
+  const content = [];
+  imgs.forEach((b64, i) => { content.push({type:"text", text:`Photo ${i+1} :`}); content.push({type:"image", source:{type:"base64", media_type:"image/jpeg", data:b64}}); });
+  content.push({type:"text", text:prompt});
+  const tools = cfg.web ? [{type:"web_search_20250305", name:"web_search", max_uses:4}] : undefined;
+  let messages = [{role:"user", content}];
+  aiCtl = new AbortController();
+  for (let round = 0; round < 4; round++){
+    const res = await fetch("https://api.anthropic.com/v1/messages", {method:"POST", signal:aiCtl.signal,
+      headers:{"content-type":"application/json", "x-api-key":key, "anthropic-version":"2023-06-01", "anthropic-dangerous-direct-browser-access":"true"},
+      body: JSON.stringify({model:cfg.modelClaude, max_tokens:6000, messages, ...(tools ? {tools} : {})})});
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok){
+      if (res.status === 401) throw {msg:"Clé API Claude refusée. Vérifiez-la dans Réglages.", settings:true};
+      if (res.status === 429) throw {msg:"Trop de demandes. Patientez une minute."};
+      throw {msg:"L'analyse a échoué (" + (data?.error?.message || res.status) + ")."};
+    }
+    if (data.stop_reason === "pause_turn"){ messages = [...messages, {role:"assistant", content:data.content}]; continue; }
+    return data.content.filter(b => b.type === "text").map(b => b.text).join("");
+  }
+  throw {msg:"L'analyse a pris trop de temps."};
+}
+function parseJson(text){
+  const m = text.match(/\{[\s\S]*\}/); if (!m) throw {msg:"Réponse illisible. Reprenez des photos plus nettes."};
+  try{ return JSON.parse(m[0]); }catch(e){ throw {msg:"Réponse illisible. Reprenez des photos plus nettes."}; }
+}
+function buildPrompt(){
+  const lines = photos.map((p,i) => `Photo ${i+1} : ${p.src === "camera" ? "caméra, produit n°" + p.group : "galerie (produit inconnu)"}${p.code ? ", code lu par le téléphone : " + p.code.replace(/\x1d/g," ") : ""}`);
+  const known = catalog.slice(0, 150).map(c => `${c.nom}${c.marque ? " (" + c.marque + ")" : ""}${c.codeBarres ? " [" + c.codeBarres + "]" : ""}`);
+  const web = cfg.provider === "claude" && cfg.web;
+  return `Tu fais l'inventaire du stock d'une clinique (laboratoire, imagerie, pharmacie). Les ${photos.length} photos ci-dessus montrent un ou plusieurs produits.
+${lines.join("\n")}
+Les photos marquées « caméra, produit n°X » avec le même X montrent le même produit sous plusieurs angles. Les photos de galerie peuvent montrer n'importe quel produit : regroupe toi-même les photos d'un même produit (même nom, même lot) pour ne le lister qu'UNE fois.
+${known.length ? "Produits déjà connus dans l'inventaire (réutilise exactement ces noms s'il s'agit du même produit) :\n- " + known.join("\n- ") + "\n" : ""}
+Pour chaque produit distinct, donne :
+- "photos" : numéros des photos qui le montrent
+- "nom" : nom commercial (avec la référence ou le conditionnement utile), "marque", "lot", "peremption" (AAAA-MM-JJ ; si seul le mois est indiqué, dernier jour du mois)
+- "categorie" : une de ${CATS.map(c => '"' + c + '"').join(", ")}
+- "flacons_par_coffret" : nombre de flacons/ampoules/unités par coffret ("2 x 50 mL" = 2 ; "R1 4 x 20 mL + R2 1 x 20 mL" = 5 ; "boîte de 100" = 100). "flacons_source" : "boite" s'il est imprimé${web ? ', "internet" si tu l\'as trouvé en cherchant sur le web (fiche technique du fabricant)' : ""}, "estime" si tu le déduis de ta connaissance du produit, "inconnu" sinon (alors null). "flacons_detail" : la référence ou le conditionnement utilisé.
+- "code_barres" : chiffres EAN/GTIN visibles (vide sinon)
+- "coffrets" : nombre de coffrets/boîtes distincts de ce produit visibles en même temps sur une même photo (1 par défaut)
+- PRODUIT SANS ÉTIQUETTE lisible (gants, seringues, tubes, compresses, consommables en vrac…) : "nom_propose": true, "description" : ce que tu vois (type, taille, volume, couleur), "propositions" : 3 noms courts du plus probable au moins probable (ex. "Seringue 10 mL Luer"), "nom" = la première proposition ; lot et péremption vides.
+- Ne devine JAMAIS un lot ni une date : chaîne vide si illisible.
+Réponds uniquement par ce JSON :
+{"produits":[{"photos":[1],"nom":"","nom_propose":false,"description":"","propositions":[],"categorie":"","marque":"","lot":"","peremption":"","flacons_par_coffret":null,"flacons_source":"boite","flacons_detail":"","code_barres":"","coffrets":1}]}`;
+}
+async function analyse(){
+  if (!photos.length) return;
+  busy(true, "Analyse en cours…", `${photos.length} photo(s) envoyée(s) à ${cfg.provider === "gemini" ? "Gemini" : "Claude"} · 10 à 60 secondes`);
+  try{
+    const imgs = [];
+    for (const p of photos){ const bmp = await createImageBitmap(p.blob); imgs.push(await blobToB64(await canvasBlob(bmp, bmp.width, bmp.height, Math.min(1280, +cfg.quality)))); }
+    const prompt = buildPrompt();
+    const text = cfg.provider === "gemini" ? await callGemini(imgs, prompt) : await callClaude(imgs, prompt);
+    const data = parseJson(text);
+    products = normalize(data.produits || data.products || []);
+    if (!products.length) throw {msg:"Aucun produit reconnu. Reprenez des photos plus proches et nettes."};
+    busy(false); renderResults(); show("results");
+  }catch(e){
+    busy(false);
+    if (e && e.name === "AbortError") return;
+    toast((e && e.msg) || "L'analyse a échoué. Vérifiez la connexion Internet.", true);
+    if (e && e.settings) openSettings();
+  }
+}
+const okDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d || "") ? d : "";
+function findKnown(p){
+  return catalog.find(c => p.codeBarres && c.codeBarres === p.codeBarres) || catalog.find(c => c.nom.toLowerCase() === p.nom.toLowerCase() && (c.marque || "").toLowerCase() === (p.marque || "").toLowerCase());
+}
+function normalize(list){
+  const out = [];
+  for (const r of list){
+    const idx = (r.photos || []).map(n => +n - 1).filter(i => photos[i]);
+    const p = {
+      key: Math.random().toString(36).slice(2), include:true,
+      photoIdx: idx.length ? idx : [], nom: String(r.nom || "").trim() || "Produit non identifié",
+      nomPropose: !!r.nom_propose, description: r.description || "", propositions: (r.propositions || []).filter(Boolean).slice(0,3),
+      categorie: CATS.includes(r.categorie) ? r.categorie : (r.categorie || ""), marque: r.marque || "", lot: String(r.lot || "").trim(),
+      peremption: okDate(r.peremption), flacons: (r.flacons_par_coffret == null || r.flacons_par_coffret === "") ? null : +r.flacons_par_coffret,
+      source: r.flacons_source || "", detail: r.flacons_detail || "", codeBarres: String(r.code_barres || "").replace(/\s/g,""),
+      coffrets: Math.max(1, +r.coffrets || 1), entames: 0, prix: null
+    };
+    const gs1 = idx.map(i => parseGS1(photos[i].code)).find(Boolean);
+    if (gs1){ p.codeBarres = gs1.gtin; if (gs1.lot) p.lot = gs1.lot; if (gs1.peremption) p.peremption = gs1.peremption; }
+    else if (!p.codeBarres){ const c = idx.map(i => photos[i].code).find(c => /^\d{8,14}$/.test(c)); if (c) p.codeBarres = c; }
+    const k = findKnown(p);
+    if (k){ if (!p.categorie) p.categorie = k.categorie || ""; if (k.prix != null) p.prix = k.prix; if (p.flacons == null && k.flacons != null){ p.flacons = k.flacons; p.source = "boite"; }
+      if (k.nom && p.nomPropose && k.nom.toLowerCase() === p.nom.toLowerCase()) p.nomPropose = false;
+      p.known = catalog.some(c => (c.codeBarres === p.codeBarres && p.codeBarres || c.nom.toLowerCase() === p.nom.toLowerCase()) && (c.lot || "") === p.lot); }
+    if (p.nomPropose && !p.propositions.includes(p.nom)) p.propositions.unshift(p.nom);
+    // doublon local (même produit + même lot)
+    const dup = out.find(o => o.lot === p.lot && ((o.codeBarres && o.codeBarres === p.codeBarres) || o.nom.toLowerCase() === p.nom.toLowerCase()));
+    if (dup){ dup.photoIdx = [...new Set([...dup.photoIdx, ...p.photoIdx])]; dup.coffrets += p.coffrets; continue; }
+    out.push(p);
+  }
+  return out;
+}
+function parseGS1(raw){
+  if (!raw || !/^(\]d2|\]C1|\]Q3)?(\(01\)|01)\d{14}/.test(raw)) return null;
+  let s = raw.replace(/^\](d2|C1|Q3)/, "");
+  if (s.includes("(")) s = s.replace(/\)/g, "").split("(").filter(Boolean).join("\x1d");
+  const out = {}; let i = 0; const fixed = {"00":18,"01":14,"02":14,"11":6,"13":6,"15":6,"16":6,"17":6};
+  while (i < s.length){
+    if (s[i] === "\x1d"){ i++; continue; }
+    const ai = s.substr(i, 2);
+    if (fixed[ai]){ out[ai] = s.substr(i + 2, fixed[ai]); i += 2 + fixed[ai]; continue; }
+    if (["10","21","30","91"].includes(ai)){ let j = s.indexOf("\x1d", i + 2); if (j < 0) j = s.length; out[ai] = s.slice(i + 2, j); i = j; continue; }
+    break;
+  }
+  if (!out["01"]) return null;
+  let per = "";
+  if (out["17"]){ const y = "20" + out["17"].slice(0,2), m = out["17"].slice(2,4); let d = out["17"].slice(4,6); if (d === "00") d = String(new Date(+y, +m, 0).getDate()).padStart(2, "0"); per = `${y}-${m}-${d}`; }
+  return {gtin: out["01"], lot: out["10"] || "", peremption: per};
+}
+
+/* ===================== results ===================== */
+function expDays(d){ return d ? Math.floor((new Date(d + "T00:00:00") - new Date().setHours(0,0,0,0)) / 864e5) : null; }
+function renderResults(){
+  $("plist").innerHTML = products.map((p, n) => card(p, n)).join("");
+  renderSummary();
+}
+function renderSummary(){
+  const inc = products.filter(p => p.include);
+  const toCheck = products.filter(p => !p.lot && !p.nomPropose).length + products.filter(p => p.source === "estime" || p.source === "inconnu").length;
+  const names = products.filter(p => p.nomPropose).length, known = products.filter(p => p.known).length;
+  $("summary").innerHTML = `<span class="chip" style="background:var(--teal-soft);color:#0A4B45">${products.length} produit(s) · ${photos.length} photo(s)</span>`
+    + (toCheck ? `<span class="chip" style="background:var(--warn-bg);color:var(--warn)">${toCheck} champ(s) à vérifier</span>` : "")
+    + (names ? `<span class="chip" style="background:var(--blue-bg);color:var(--blue)">${names} nom(s) à valider</span>` : "")
+    + (known ? `<span class="chip" style="background:#ECEFEE;color:#3A4745">${known} déjà au PC</span>` : "");
+  const cof = inc.reduce((s,p) => s + p.coffrets, 0);
+  $("totals").textContent = `${inc.length} produit(s) · ${cof} coffret(s)`;
+  $("dest").innerHTML = cfg.pc && cfg.pc.token ? `Vers : <b style="color:var(--ink)">${esc(cfg.pc.name)}</b> · ${pcOnline ? "Wi-Fi" : "hors ligne"}` : `<b style="color:var(--warn)">Aucun PC connecté</b>`;
+  $("sendBtn").disabled = !inc.length;
+  $("sendBtn").querySelector("span").textContent = cfg.pc && cfg.pc.token ? (pcOnline ? "Valider et envoyer au PC" : "Valider (envoi dès que le PC répond)") : "Connecter un PC pour envoyer";
+}
+function card(p, n){
+  const imgs = p.photoIdx.slice(0,2).map(i => `<img src="${photos[i].url}" alt="">`).join("");
+  const dd = expDays(p.peremption);
+  const perTag = dd == null ? "" : dd < 0 ? `<span class="tag" style="color:var(--bad)">périmé</span>` : dd <= 90 ? `<span class="tag" style="color:var(--bad)">dans ${dd} j</span>` : "";
+  const srcTag = {boite:`<span class="tag" style="color:var(--teal)">lu sur la boîte</span>`, internet:`<span class="tag" style="color:var(--teal)">internet</span>`, estime:`<span class="tag" style="color:var(--warn)">estimé</span>`, inconnu:`<span class="tag" style="color:var(--warn)">à saisir</span>`}[p.source] || "";
+  const wLot = !p.lot && !p.nomPropose, wFl = p.source === "estime" || p.source === "inconnu";
+  const cls = !p.include ? "off" : p.nomPropose ? "np" : (wLot || wFl) ? "w" : "";
+  return `<article class="pcard ${cls}" data-k="${p.key}">
+    <div class="phead">
+      <div class="stack">${imgs}${p.photoIdx.length ? `<span class="cnt">${p.photoIdx.length}</span>` : ""}</div>
+      <div style="flex-grow:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+        ${p.nomPropose ? `<span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--teal)">Sans étiquette · nom proposé</span>` : ""}
+        <input class="pname" data-f="nom" value="${esc(p.nom)}" aria-label="Nom du produit ${n+1}">
+        <span class="sub">${p.nomPropose ? esc(p.description) : (esc(p.marque) || "&nbsp;")}</span>
+        ${p.known ? `<span class="badge" style="background:#ECEFEE;color:#3A4745">Déjà au PC · s'ajoutera à cette ligne</span>` : ""}
+      </div>
+      <label class="incl"><input type="checkbox" data-f="include" ${p.include ? "checked" : ""} aria-label="Inclure ce produit"></label>
+    </div>
+    ${p.nomPropose ? `<div class="props" role="group" aria-label="Noms proposés">${p.propositions.map(x => `<button data-prop="${esc(x)}" class="${x === p.nom ? "on" : ""}">${esc(x)}</button>`).join("")}<button class="write" data-write>Écrire un nom…</button></div>` : ""}
+    <div class="fields">
+      ${p.nomPropose ? "" : `<label class="fld ${wLot ? "w" : ""}"><span>Lot${wLot ? " · illisible, à saisir" : ""}</span><input class="mono" data-f="lot" value="${esc(p.lot)}" placeholder="${wLot ? "Saisir le lot" : ""}"></label>
+      <label class="fld"><span>Péremption ${perTag}</span><input type="date" data-f="peremption" value="${esc(p.peremption)}"></label>`}
+      <label class="fld ${wFl ? "w" : ""}"><span>${p.nomPropose ? "Unités / boîte" : "Flacons / coffret"} ${srcTag}</span><input type="number" min="0" inputmode="numeric" data-f="flacons" value="${p.flacons ?? ""}"></label>
+      <label class="fld"><span>Catégorie</span><select data-f="categorie">${["", ...CATS].map(c => `<option ${c === p.categorie ? "selected" : ""} value="${esc(c)}">${c || "—"}</option>`).join("")}${p.categorie && !CATS.includes(p.categorie) ? `<option selected>${esc(p.categorie)}</option>` : ""}</select></label>
+      <label class="fld"><span>Prix / coffret (DA)${p.prix != null ? ' <span class="tag" style="color:var(--teal)">mémorisé</span>' : ""}</span><input type="number" min="0" inputmode="decimal" data-f="prix" value="${p.prix ?? ""}"></label>
+      <label class="fld"><span>Code-barres</span><input class="mono" inputmode="numeric" data-f="codeBarres" value="${esc(p.codeBarres)}"></label>
+    </div>
+    ${wFl && p.detail ? `<span class="hint">${esc(p.detail)}</span>` : ""}
+    <div class="steppers">
+      <div class="stp"><span>Coffrets fermés</span><div><button data-step="coffrets:-1" aria-label="Retirer un coffret">−</button><b>${p.coffrets}</b><button data-step="coffrets:1" aria-label="Ajouter un coffret">+</button></div></div>
+      <div class="stp"><span>Flacons entamés</span><div><button data-step="entames:-1" aria-label="Retirer un flacon entamé">−</button><b>${p.entames}</b><button data-step="entames:1" aria-label="Ajouter un flacon entamé">+</button></div></div>
+    </div>
+  </article>`;
+}
+$("plist").addEventListener("input", e => {
+  const c = e.target.closest("[data-k]"); if (!c) return; const p = products.find(x => x.key === c.dataset.k); const f = e.target.dataset.f; if (!f) return;
+  if (f === "include") { p.include = e.target.checked; c.classList.toggle("off", !p.include); renderSummary(); return; }
+  if (f === "flacons" || f === "prix"){ p[f] = e.target.value === "" ? null : +e.target.value; if (f === "flacons") p.source = "manuel"; }
+  else p[f] = e.target.value;
+  if (f === "nom" && p.nomPropose){ c.querySelectorAll("[data-prop]").forEach(b => b.classList.toggle("on", b.dataset.prop === p.nom)); }
+});
+$("plist").addEventListener("change", e => {
+  const c = e.target.closest("[data-k]"); if (!c) return; const p = products.find(x => x.key === c.dataset.k);
+  const f = e.target.dataset.f;
+  if (f === "lot"){ const box = e.target.closest(".fld"); const w = !p.lot && !p.nomPropose; box.classList.toggle("w", w); box.querySelector("span").textContent = w ? "Lot · illisible, à saisir" : "Lot"; }
+  if (f === "flacons"){ const box = e.target.closest(".fld"); box.classList.remove("w"); const t = box.querySelector(".tag"); if (t){ t.textContent = "saisi"; t.style.color = "var(--teal)"; } }
+  renderSummary();
+});
+$("plist").addEventListener("click", e => {
+  const c = e.target.closest("[data-k]"); if (!c) return; const p = products.find(x => x.key === c.dataset.k);
+  const st = e.target.closest("[data-step]"); const pr = e.target.closest("[data-prop]");
+  if (st){ const [k, d] = st.dataset.step.split(":"); p[k] = Math.max(k === "coffrets" ? 0 : 0, p[k] + +d); renderResults(); }
+  else if (pr){ p.nom = pr.dataset.prop; renderResults(); }
+  else if (e.target.closest("[data-write]")){ const i = c.querySelector('[data-f="nom"]'); i.focus(); i.select(); }
+});
+$("sendBtn").onclick = async () => {
+  if (!cfg.pc || !cfg.pc.token){ openConnect(); return; }
+  const inc = products.filter(p => p.include && p.nom.trim());
+  if (!inc.length) return;
+  busy(true, "Envoi au PC…", "");
+  const items = [];
+  for (const p of inc){
+    const ph = [];
+    for (const i of p.photoIdx.slice(0, 2)){ try{ const bmp = await createImageBitmap(photos[i].blob); ph.push(await blobToB64(await canvasBlob(bmp, bmp.width, bmp.height, 640))); }catch(e){} }
+    items.push({nom:p.nom.trim(), categorie:p.categorie, marque:p.marque, lot:p.lot, peremption:p.peremption, coffrets:p.coffrets, entames:p.entames,
+      flacons:p.flacons, prix:p.prix, code_barres:p.codeBarres, nom_propose:p.nomPropose, source:p.source, detail:p.detail, photos:ph});
+  }
+  try{
+    await flushQueue().catch(e => { if (!e.offline) throw e; });
+    const d = await pcApi("POST", "/api/receive", {items});
+    const add = d.results.filter(r => r.status === "added").length, mer = d.results.length - add;
+    busy(false); toast(`Envoyé à ${cfg.pc.name} : ${add} nouveau(x), ${mer} fusionné(s)`); pcOnline = true;
+    resetSession(); ping();
+  }catch(e){
+    busy(false);
+    if (e.offline){ queue.push({ts:Date.now(), items}); store.set("inv2.queue", queue); toast("PC injoignable : envoi gardé sur le téléphone, il partira automatiquement.", true); resetSession(); renderPc(); }
+    else toast(e.msg || "Envoi impossible", true);
+  }
+};
+function resetSession(){ photos.forEach(p => URL.revokeObjectURL(p.url)); photos = []; products = []; groupNo = 1; renderTray(); screenStack = ["camera"]; show("camera", false); }
+
+/* ===================== settings ===================== */
+const GEMINI_DEFAULT = [["gemini-flash-lite-latest","Gemini Flash-Lite · ~500 analyses/jour"],["gemini-flash-latest","Gemini Flash · plus précis, ~20/jour"]];
+const CLAUDE_MODELS = [["claude-sonnet-5-5","Claude Sonnet 5.5 (recommandé)"],["claude-opus-5-5","Claude Opus 5.5 (plus précis)"],["claude-haiku-5-5","Claude Haiku 5.5 (rapide)"]];
+function openSettings(){ fillSettings(); show("settings"); }
+$("openSettings").onclick = openSettings;
+$("pcStatus").onclick = openSettings;
+function fillSettings(){
+  const g = cfg.provider === "gemini";
+  document.querySelectorAll("[data-prov]").forEach(b => { b.classList.toggle("on", b.dataset.prov === cfg.provider); b.setAttribute("aria-pressed", String(b.dataset.prov === cfg.provider)); });
+  $("keyLabel").textContent = g ? "Clé API Google Gemini" : "Clé API Claude";
+  $("stKey").value = g ? cfg.keyGemini : cfg.keyClaude; $("stKey").placeholder = g ? "AIza…" : "sk-ant-…";
+  const list = g ? (cfg.geminiModels || GEMINI_DEFAULT) : CLAUDE_MODELS;
+  $("stModel").innerHTML = list.map(([v,t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join("");
+  $("stModel").value = g ? cfg.modelGemini : cfg.modelClaude; if (!$("stModel").value) $("stModel").selectedIndex = 0;
+  $("stKeyHint").textContent = g ? "Gratuit : créez la clé sur aistudio.google.com (« Get API key »), sans carte bancaire. Gardée seulement sur ce téléphone." : "Payant : créez la clé sur platform.claude.com. Gardée seulement sur ce téléphone.";
+  $("stWebRow").hidden = g; $("stWeb").checked = cfg.web; $("stBarcode").checked = cfg.barcode; $("stQuality").value = cfg.quality;
+  $("stVersion").textContent = "Inventaire Clinique · version " + APP_VERSION + (detector ? "" : " · lecture des codes-barres par l'IA");
+  renderPc();
+}
+document.querySelectorAll("[data-prov]").forEach(b => b.onclick = () => { cfg.provider = b.dataset.prov; saveCfg(); fillSettings(); });
+$("stKey").onchange = () => { const v = $("stKey").value.trim(); if (cfg.provider === "gemini"){ cfg.keyGemini = v; refreshGeminiModels(); } else cfg.keyClaude = v; saveCfg(); };
+$("stModel").onchange = () => { if (cfg.provider === "gemini") cfg.modelGemini = $("stModel").value; else cfg.modelClaude = $("stModel").value; saveCfg(); };
+$("stWeb").onchange = () => { cfg.web = $("stWeb").checked; saveCfg(); };
+$("stBarcode").onchange = () => { cfg.barcode = $("stBarcode").checked; saveCfg(); };
+$("stQuality").onchange = () => { cfg.quality = $("stQuality").value; saveCfg(); };
+$("stSearch").onclick = openConnect;
+$("stTest").onclick = async () => { await ping(); toast(pcOnline ? "Connexion au PC : OK" : "PC injoignable. Vérifiez le Wi-Fi et que le programme est ouvert.", !pcOnline); };
+async function refreshGeminiModels(){
+  if (!cfg.keyGemini) return;
+  try{
+    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", {headers:{"x-goog-api-key":cfg.keyGemini}});
+    if (!r.ok){ if (r.status === 400 || r.status === 403) toast("Clé Gemini refusée. Vérifiez-la.", true); return; }
+    const d = await r.json();
+    const ok = (d.models || []).filter(m => (m.supportedGenerationMethods || []).includes("generateContent")).map(m => m.name.replace("models/",""))
+      .filter(n => /^gemini-.*flash/.test(n) && !/image|tts|audio|live|exp|preview|thinking/.test(n));
+    if (!ok.length) return;
+    const ver = n => +((n.match(/\d+(\.\d+)?/) || ["0"])[0]);
+    const lite = ok.filter(n => /lite/.test(n)).sort((a,b) => ver(b) - ver(a)), full = ok.filter(n => !/lite/.test(n)).sort((a,b) => ver(b) - ver(a));
+    cfg.geminiModels = [...lite.slice(0,3).map((n,i) => [n, n + (i === 0 ? " · gratuit, recommandé" : "")]), ...full.slice(0,3).map(n => [n, n + " · moins d'analyses par jour"])];
+    if (!cfg.geminiModels.some(m => m[0] === cfg.modelGemini)) cfg.modelGemini = cfg.geminiModels[0][0];
+    saveCfg(); if (!$("scr-settings").hidden) fillSettings(); toast("Clé Gemini valide");
+  }catch(e){}
+}
+
+/* ===================== start ===================== */
+renderTray(); renderPc();
+if (!cfg.pc && !cfg.skipConnect) openConnect(); else { show("camera", false); ping(); }
+if (cfg.provider === "gemini" && !cfg.keyGemini || cfg.provider === "claude" && !cfg.keyClaude) setTimeout(() => toast("Ajoutez votre clé d'IA dans Réglages (roue dentée)."), 1200);
+</script>
+</body>
+</html>

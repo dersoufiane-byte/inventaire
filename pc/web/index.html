@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inventaire Clinique</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --ink:#0E1B1A; --ink2:#16302D; --line-d:#2B4D49; --muted-d:#8FA9A4; --soft-d:#B8CCC8;
+  --bg:#F3F6F5; --card:#FFFFFF; --line:#DCE4E2; --line2:#ECF0EF; --muted:#55625F; --text2:#3A4745;
+  --teal:#0B6E66; --teal-d:#08524C; --teal-soft:#E0F2EE; --mint:#3DDC97;
+  --ok-bg:#E1F3E7; --ok:#1C6B3A; --warn-bg:#FDEFD9; --warn:#7A3E00; --warn-line:#F1D9AE; --warn-box:#FFF6E8;
+  --bad-bg:#FDE4E1; --bad:#A31B12; --blue-bg:#E0ECF8; --blue:#1D4F86;
+  --display:"Sora","Segoe UI",system-ui,sans-serif; --body:"Manrope","Segoe UI",system-ui,sans-serif; --mono:"JetBrains Mono",Consolas,ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--body)}
+a{color:var(--teal)} a:hover{color:var(--teal-d)}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.app{display:flex;min-height:100%;flex-wrap:wrap}
+/* sidebar */
+nav.side{flex:1 1 232px;max-width:260px;background:var(--ink);color:#EAF2F0;padding:28px 18px;display:flex;flex-direction:column;gap:28px}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--mint);color:#06231A;display:flex;align-items:center;justify-content:center}
+.brand b{font-family:var(--display);font-size:16px;display:block}
+.brand span{font-size:12px;color:var(--muted-d)}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav a{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;color:var(--soft-d);text-decoration:none;font-weight:600}
+.nav a:hover{background:#13261F;color:#fff}
+.nav a.on{background:var(--ink2);color:#fff;font-weight:700}
+.badge{margin-left:auto;border-radius:999px;font-size:12px;font-weight:800;padding:1px 8px;background:var(--mint);color:#06231A}
+.badge.red{background:#5A2A20;color:#FFB4A8}
+.side-card{margin-top:auto;background:var(--ink2);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted-d)}
+.side-card b{color:#EAF2F0;font-size:13px}
+.mono{font-family:var(--mono)}
+/* main */
+main{flex:999 1 640px;min-width:0;padding:28px 32px 48px;display:flex;flex-direction:column;gap:22px}
+.head{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+h1{margin:0;font-family:var(--display);font-size:28px;font-weight:700;letter-spacing:-.01em;flex-grow:1}
+h2{margin:0;font-family:var(--display);font-size:17px;font-weight:600}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 14px;height:44px;width:320px;max-width:100%}
+.search input{border:0;background:transparent;font:500 15px var(--body);flex-grow:1;min-width:0;color:var(--ink);outline:none}
+.btn{height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:14px;color:var(--ink);padding:0 16px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--teal)}
+.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn.primary:hover{background:var(--teal-d)}
+.btn.danger{color:#B42318;border-color:#E8B4AE}
+.btn.sm{height:36px;font-size:13px;padding:0 12px;border-radius:9px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi span{font-size:13px;color:var(--muted);font-weight:600}
+.kpi b{font-family:var(--display);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi small{font-size:16px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{height:34px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-weight:700;font-size:13px;padding:0 14px;color:var(--text2)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.cols{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px}
+.tablebox{flex:999 1 600px;min-width:0;overflow-x:auto}
+table{width:100%;min-width:820px;border-collapse:collapse;font-size:14px}
+th{background:#F7F9F8;text-align:left;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:12px 10px;font-weight:700;vertical-align:bottom}
+th:first-child,td:first-child{padding-left:16px}
+td{padding:11px 10px;border-top:1px solid var(--line2);vertical-align:middle}
+.r{text-align:right}.num{font-variant-numeric:tabular-nums}
+tr.flash td{background:#F0FAF6}
+.pname{font-weight:800}
+.sub{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;margin-left:6px;font-size:12px;font-weight:800;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.ok{background:var(--ok-bg);color:var(--ok)}.warn{background:var(--warn-bg);color:var(--warn)}.bad{background:var(--bad-bg);color:var(--bad)}.blue{background:var(--blue-bg);color:var(--blue)}
+.step{display:inline-flex;align-items:center;gap:2px;background:var(--bg);border-radius:9px;padding:2px}
+.step button{width:28px;height:28px;border:0;background:transparent;border-radius:7px;font-weight:800;color:var(--ink)}
+.step button:hover{background:var(--line)}
+.step b{min-width:26px;text-align:center}
+.empty{text-align:center;color:var(--muted);padding:40px 20px}
+.empty strong{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+aside.feed{flex:1 1 280px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.fi{display:flex;gap:10px;align-items:center;padding:10px;border-radius:12px;background:var(--bg)}
+.fi.w{background:var(--warn-box);border:1px solid var(--warn-line)}
+.ico{flex:none;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800}
+.fi .t{flex-grow:1;display:flex;flex-direction:column;min-width:0}
+.fi .t b{font-size:14px}
+.fi .t span{font-size:12px;color:var(--muted)}
+.live{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--teal)}
+.dot{width:8px;height:8px;border-radius:50%;background:#1FB57A}
+.muted{color:var(--muted)}
+/* phones */
+.install{flex:1 1 520px;background:var(--ink);color:#EAF2F0;border-radius:22px;padding:30px;display:flex;flex-wrap:wrap;gap:30px;align-items:center}
+.qrbox{flex:none;background:#fff;border-radius:18px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--text2)}
+.qrbox svg{width:220px;height:220px;display:block}
+.qrfallback{width:220px;height:220px;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;text-align:center;font-size:13px;padding:12px;border:2px dashed var(--line);border-radius:10px}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;font-size:15px;color:#CFE0DC}
+.steps li{display:flex;gap:12px}
+.steps i{flex:none;width:26px;height:26px;border-radius:50%;background:var(--ink2);color:var(--mint);font-weight:800;font-size:13px;font-style:normal;display:flex;align-items:center;justify-content:center}
+.pair{flex:1 1 340px;padding:26px;display:flex;flex-direction:column;gap:16px}
+.pairreq{background:var(--teal-soft);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.code{font-family:var(--mono);font-size:34px;letter-spacing:.2em}
+/* slide-over */
+.scrim{position:fixed;inset:0;background:rgba(14,27,26,.45);z-index:20}
+.panel{position:fixed;top:0;right:0;bottom:0;width:580px;max-width:100%;background:#fff;z-index:21;display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(14,27,26,.18)}
+.panel header{padding:24px 28px 18px;border-bottom:1px solid var(--line2);display:flex;gap:14px;align-items:flex-start}
+.panel .bd{flex:1 1 auto;overflow:auto;padding:20px 28px;display:flex;flex-direction:column;gap:18px}
+.panel footer{padding:16px 28px 22px;border-top:1px solid var(--line2);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--teal)}
+.eyebrow.w{color:#9A4A00}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid2 .full{grid-column:span 2}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;color:var(--text2)}
+label.f input,label.f select{height:44px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font:600 15px var(--body);color:var(--ink);background:#fff;width:100%}
+label.f input.mono{font:400 15px var(--mono)}
+label.f.w input{border:1.5px solid #D98A1E;background:var(--warn-box)}
+.note{background:var(--warn-box);border:1px solid var(--warn-line);border-radius:12px;padding:12px 14px;font-size:13px;color:#5A3300;display:flex;gap:12px;align-items:center}
+.photos{display:flex;gap:8px;flex-wrap:wrap}
+.photos img{width:96px;height:96px;object-fit:cover;border-radius:12px;border:1px solid var(--line);cursor:zoom-in}
+.hist{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;z-index:40;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:50;display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+.zoom img{max-width:100%;max-height:100%;border-radius:12px}
+.offline{background:var(--bad-bg);color:var(--bad);border-radius:12px;padding:12px 14px;font-weight:700}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side" aria-label="Navigation">
+    <div class="brand">
+      <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></div>
+      <div><b>Inventaire</b><span id="pcName">Clinique</span></div>
+    </div>
+    <div class="nav" id="nav">
+      <a href="#inventaire" data-v="inventaire"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>Inventaire</a>
+      <a href="#reception" data-v="reception"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg>Réception<span class="badge" id="bRec" hidden></span></a>
+      <a href="#peremptions" data-v="peremptions"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Péremptions<span class="badge red" id="bPer" hidden></span></a>
+      <a href="#exports" data-v="exports"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Exports Excel</a>
+      <a href="#telephones" data-v="telephones"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>Téléphones<span class="badge" id="bTel" hidden></span></a>
+    </div>
+    <div class="side-card">
+      <b>Adresse Wi-Fi de ce PC</b>
+      <span class="mono" id="sideIp">…</span>
+      <span id="sideDev">Aucun téléphone</span>
+    </div>
+  </nav>
+  <main id="main"><div class="empty"><strong>Chargement…</strong></div></main>
+</div>
+<div id="layer"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const CATS = ["Réactifs","Consommables","Médicaments","Produits de contraste","Contrôles et calibrants","Autre"];
+let S = null, rev = 0, view = "inventaire", q = "", catFilter = "Toutes", flashIds = new Set(), offline = false;
+const fmt = n => n == null || n === "" ? "—" : Number(n).toLocaleString("fr-FR");
+const vials = p => p.flacons != null ? p.flacons * p.coffrets + (p.entames || 0) : (p.entames || 0);
+
+async function api(method, url, body){
+  const r = await fetch(url, {method, headers: body ? {"Content-Type":"application/json"} : {}, body: body ? JSON.stringify(body) : undefined});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || ("Erreur " + r.status));
+  return d;
+}
+function toast(msg){
+  const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role","status"); t.textContent = msg;
+  document.body.append(t); setTimeout(() => t.remove(), 2800);
+}
+function expiry(d){
+  if (!d) return {cls:"", tag:"", txt:"non indiquée", days: 99999};
+  const days = Math.floor((new Date(d + "T00:00:00") - new Date().setHours(0,0,0,0)) / 864e5);
+  const txt = new Date(d + "T00:00:00").toLocaleDateString("fr-FR");
+  if (days < 0) return {cls:"bad", tag:"Périmé", txt, days};
+  if (days <= 90) return {cls:"warn", tag:"Dans " + days + " j", txt, days};
+  return {cls:"ok", tag:"Valide", txt, days};
+}
+function ago(ts){
+  const d = new Date(ts), s = (Date.now() - d) / 1000;
+  if (s < 60) return "à l'instant"; if (s < 3600) return "il y a " + Math.floor(s/60) + " min";
+  const today = new Date().toDateString() === d.toDateString();
+  return (today ? "aujourd'hui" : d.toLocaleDateString("fr-FR")) + ", " + d.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+}
+
+/* ---------------- polling ---------------- */
+async function poll(){
+  try{
+    const d = await api("GET", "/api/state?rev=" + rev);
+    if (offline){ offline = false; render(); }
+    if (!d.same){
+      if (S){ const old = new Set(S.receptions.map(r => r.id));
+        d.receptions.filter(r => !old.has(r.id)).forEach(r => { r.results.forEach(x => flashIds.add(x.id)); toast(`Reçu de ${r.device} : ${r.results.length} produit(s)`); });
+        if (d.pairings.length > S.pairings.length) toast("Un téléphone demande à se connecter");
+      }
+      S = d; rev = d.rev; render();
+    }
+  }catch(e){ if (!offline){ offline = true; render(); } }
+  setTimeout(poll, 1500);
+}
+
+/* ---------------- routing ---------------- */
+function route(){ view = (location.hash.slice(1) || "inventaire"); if (!["inventaire","reception","peremptions","exports","telephones"].includes(view)) view = "inventaire"; render(); }
+addEventListener("hashchange", route);
+
+function render(){
+  document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.v === view));
+  if (!S){ $("#main").innerHTML = offline ? `<div class="offline">Le programme Inventaire n'est pas lancé. Ouvrez-le puis rechargez cette page.</div>` : `<div class="empty"><strong>Chargement…</strong></div>`; return; }
+  $("#pcName").textContent = S.pcName;
+  $("#sideIp").textContent = S.ip + ":" + S.port;
+  const online = S.devices.filter(d => d.last_seen && (Date.now() - new Date(d.last_seen)) < 5*60e3).length;
+  $("#sideDev").textContent = S.devices.length ? `${S.devices.length} téléphone(s) · ${online} actif(s)` : "Aucun téléphone";
+  const toCheck = S.products.filter(p => p.a_verifier).length;
+  const perCount = S.products.filter(p => expiry(p.peremption).days <= 90).length;
+  setBadge("#bRec", toCheck); setBadge("#bPer", perCount); setBadge("#bTel", S.pairings.length);
+  const keepFocus = document.activeElement && document.activeElement.id === "q";
+  const html = ({inventaire:vInventaire, reception:vReception, peremptions:vPeremptions, exports:vExports, telephones:vTelephones})[view]();
+  $("#main").innerHTML = (offline ? `<div class="offline">Connexion au programme perdue. Vérifiez que la fenêtre Inventaire est ouverte.</div>` : "") + html;
+  if (keepFocus){ const i = $("#q"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }
+}
+function setBadge(sel, n){ const b = $(sel); b.hidden = !n; b.textContent = n; }
+
+/* ---------------- views ---------------- */
+function filtered(){
+  const s = q.toLowerCase().trim();
+  return S.products.filter(p => {
+    if (catFilter === "À vérifier" && !p.a_verifier) return false;
+    if (catFilter !== "Toutes" && catFilter !== "À vérifier" && (p.categorie || "Sans catégorie") !== catFilter) return false;
+    return !s || [p.nom, p.marque, p.lot, p.code_barres, p.categorie].join(" ").toLowerCase().includes(s);
+  });
+}
+function productRows(list){
+  if (!S.products.length) return `<tr><td colspan="8" class="empty"><strong>L'inventaire est vide</strong>Envoyez des produits depuis un téléphone, ou cliquez sur « Ajouter à la main ».</td></tr>`;
+  if (!list.length) return `<tr><td colspan="8" class="empty"><strong>Aucun résultat</strong>Rien ne correspond à cette recherche.</td></tr>`;
+  return list.map(p => {
+    const e = expiry(p.peremption);
+    const tags = (p.nom_propose ? ` <span class="pill blue">nom proposé</span>` : "") + (p.a_verifier && !p.nom_propose ? ` <span class="pill warn">à vérifier</span>` : "");
+    return `<tr class="${flashIds.has(p.id) ? "flash" : ""}">
+      <td><div class="pname">${esc(p.nom)}${tags}</div><div class="sub">${esc([p.categorie, p.marque, p.emplacement].filter(Boolean).join(" · ")) || "&nbsp;"}</div></td>
+      <td class="mono" style="font-size:13px">${esc(p.lot) || "—"}</td>
+      <td>${p.peremption ? `${e.txt}<span class="pill ${e.cls}">${e.tag}</span>` : `<span class="muted">non indiquée</span>`}</td>
+      <td class="r"><span class="step"><button data-act="cof-" data-id="${p.id}" aria-label="Retirer un coffret">−</button><b class="num">${p.coffrets}</b><button data-act="cof+" data-id="${p.id}" aria-label="Ajouter un coffret">+</button></span></td>
+      <td class="r"><span class="step"><button data-act="ent-" data-id="${p.id}" aria-label="Retirer un flacon entamé">−</button><b class="num">${p.entames || 0}</b><button data-act="ent+" data-id="${p.id}" aria-label="Ajouter un flacon entamé">+</button></span></td>
+      <td class="r num">${p.flacons ?? "—"}${p.source === "estime" || p.source === "inconnu" ? `<div class="sub" style="color:var(--warn)">estimé</div>` : ""}</td>
+      <td class="r num">${fmt(p.prix)}</td>
+      <td class="r"><a href="#" data-act="edit" data-id="${p.id}" style="font-weight:700;font-size:13px">Modifier</a></td>
+    </tr>`;
+  }).join("");
+}
+function vInventaire(){
+  const P = S.products, list = filtered();
+  const valeur = P.reduce((s,p) => s + (p.prix != null ? p.prix * p.coffrets : 0), 0);
+  const soon = P.filter(p => { const d = expiry(p.peremption).days; return d >= 0 && d <= 90; }).length;
+  const bad = P.filter(p => expiry(p.peremption).days < 0).length;
+  const cats = ["Toutes", ...new Set(P.map(p => p.categorie || "Sans catégorie")), ...(P.some(p => p.a_verifier) ? ["À vérifier"] : [])];
+  if (!cats.includes(catFilter)) catFilter = "Toutes";
+  const last = S.receptions[0];
+  return `
+  <div class="head">
+    <h1>Inventaire</h1>
+    <label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#55625F" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Nom, lot, code-barres…" aria-label="Rechercher" value="${esc(q)}"></label>
+    <a class="btn" href="/api/export.xlsx" download><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Exporter Excel</a>
+    <button class="btn primary" data-act="new"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Ajouter à la main</button>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><span>Produits</span><b>${P.length}</b></div>
+    <div class="kpi"><span>Valeur du stock</span><b>${fmt(valeur)} <small>DA</small></b></div>
+    <div class="kpi"><span>Périment sous 90 jours</span><b style="color:#9A4A00">${soon}</b></div>
+    <div class="kpi"><span>Périmés</span><b style="color:#B42318">${bad}</b></div>
+  </div>
+  <div class="chips">${cats.map(c => `<button class="chip ${c === catFilter ? "on" : ""}" data-act="cat" data-cat="${esc(c)}">${esc(c)}</button>`).join("")}</div>
+  <div class="cols">
+    <section class="card tablebox"><table>
+      <thead><tr><th>Produit · Catégorie</th><th>Lot</th><th>Péremption</th><th class="r">Coffrets fermés</th><th class="r">Flacons entamés</th><th class="r">Flacons / coffret</th><th class="r">Prix DA / coffret</th><th><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Actions</span></th></tr></thead>
+      <tbody>${productRows(list)}</tbody></table></section>
+    <aside class="card feed" aria-label="Reçu du téléphone">
+      <div style="display:flex;align-items:center;justify-content:space-between"><h2>Reçu du téléphone</h2><span class="live"><span class="dot"></span>En direct</span></div>
+      ${last ? receptionBlock(last) : `<p class="muted" style="margin:0;font-size:14px">Rien reçu pour l'instant. Les produits validés sur le téléphone apparaissent ici.</p>`}
+    </aside>
+  </div>`;
+}
+function receptionBlock(r){
+  return `<span class="muted" style="font-size:13px">Envoi de ${ago(r.ts)} · ${esc(r.device)} · ${r.results.length} produit(s)${r.undone ? " · <b>annulé</b>" : ""}</span>
+  <div style="display:flex;flex-direction:column;gap:8px">${r.results.map(x => {
+    const w = x.a_verifier;
+    const icon = w ? `<span class="ico warn">!</span>` : x.status === "merged"
+      ? `<span class="ico blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>`
+      : `<span class="ico ok"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></span>`;
+    const txt = x.status === "merged" ? `Fusionné avec la ligne existante · +${x.coffrets}` : `Nouvelle ligne · ${x.coffrets} coffret(s)`;
+    return `<div class="fi ${w ? "w" : ""}">${icon}<div class="t"><b>${esc(x.nom)}</b><span>${w ? "À vérifier · " : ""}${txt}</span></div>${S.products.some(p => p.id === x.id) ? `<a href="#" data-act="edit" data-id="${x.id}" style="font-size:13px;font-weight:800">${w ? "Vérifier" : "Ouvrir"}</a>` : ""}</div>`;
+  }).join("")}</div>
+  ${r.undone ? "" : `<button class="btn sm" data-act="undo" data-id="${r.id}">Annuler cet envoi</button>`}`;
+}
+function vReception(){
+  const toCheck = S.products.filter(p => p.a_verifier);
+  return `<div class="head"><h1>Réception</h1></div>
+  <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px">
+    <h2>À vérifier (${toCheck.length})</h2>
+    ${toCheck.length ? toCheck.map(p => `<div class="fi w"><span class="ico warn">!</span><div class="t"><b>${esc(p.nom)}</b><span>${p.nom_propose ? "Nom proposé d'après l'image" : "Flacons par coffret estimés"} · ${esc(p.categorie || "")}</span></div><a href="#" data-act="edit" data-id="${p.id}" style="font-weight:800;font-size:13px">Vérifier</a></div>`).join("")
+      : `<p class="muted" style="margin:0">Tout est vérifié.</p>`}
+  </section>
+  <section style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">
+    ${S.receptions.length ? S.receptions.map(r => `<div class="card" style="padding:18px;display:flex;flex-direction:column;gap:10px">${receptionBlock(r)}</div>`).join("") : `<div class="card empty"><strong>Aucun envoi reçu</strong>Les envois des téléphones apparaîtront ici.</div>`}
+  </section>`;
+}
+function vPeremptions(){
+  const L = S.products.filter(p => p.peremption).map(p => ({p, e: expiry(p.peremption)})).sort((a,b) => a.e.days - b.e.days);
+  const group = (title, arr, cls) => `<section class="card" style="overflow-x:auto"><table style="min-width:640px"><caption style="text-align:left;padding:16px 16px 6px"><h2>${title} (${arr.length})</h2></caption>
+    <thead><tr><th>Produit</th><th>Lot</th><th>Péremption</th><th class="r">Coffrets</th><th class="r">Flacons</th><th></th></tr></thead><tbody>
+    ${arr.length ? arr.map(({p,e}) => `<tr><td><div class="pname">${esc(p.nom)}</div><div class="sub">${esc([p.categorie,p.marque].filter(Boolean).join(" · "))}</div></td><td class="mono" style="font-size:13px">${esc(p.lot)||"—"}</td><td>${e.txt}<span class="pill ${cls}">${e.tag}</span></td><td class="r num">${p.coffrets}</td><td class="r num">${vials(p)}</td><td class="r"><a href="#" data-act="edit" data-id="${p.id}" style="font-weight:700;font-size:13px">Modifier</a></td></tr>`).join("") : `<tr><td colspan="6" class="muted">Aucun produit.</td></tr>`}
+    </tbody></table></section>`;
+  return `<div class="head"><h1>Péremptions</h1><a class="btn" href="/api/export.xlsx?ids=${L.filter(x => x.e.days <= 90).map(x => x.p.id).join(",") || "0"}" download>Exporter ces produits</a></div>
+  ${group("Périmés", L.filter(x => x.e.days < 0), "bad")}
+  ${group("Dans les 30 jours", L.filter(x => x.e.days >= 0 && x.e.days <= 30), "warn")}
+  ${group("Dans 31 à 90 jours", L.filter(x => x.e.days > 30 && x.e.days <= 90), "warn")}`;
+}
+function vExports(){
+  const ids = filtered().map(p => p.id).join(",");
+  return `<div class="head"><h1>Exports Excel</h1></div>
+  <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:14px;max-width:760px">
+    <h2>Format du fichier</h2>
+    <p style="margin:0" class="muted">Feuille « Inventaire », 9 colonnes identiques à votre modèle : Produit, Catégorie, Marque, Lot, Péremption, Coffrets fermés, Flacons entamés, Flacons/coffret, Prix (DA/coffret).</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <a class="btn primary" href="/api/export.xlsx" download>Exporter tout l'inventaire (${S.products.length} lignes)</a>
+      ${catFilter !== "Toutes" || q ? `<a class="btn" href="/api/export.xlsx?ids=${ids || "0"}" download>Exporter la sélection actuelle (${filtered().length})</a>` : ""}
+    </div>
+  </section>
+  <section class="card" style="padding:24px;display:flex;flex-direction:column;gap:10px;max-width:760px">
+    <h2>Sauvegardes</h2>
+    <p style="margin:0" class="muted">Une copie de la base est faite chaque jour (30 jours gardés) dans :</p>
+    <span class="mono" style="font-size:13px;word-break:break-all">${esc(S.dataDir)}</span>
+    <p style="margin:0" class="muted">Pour changer de PC, copiez tout le dossier « donnees » à côté du programme sur le nouveau PC.</p>
+  </section>`;
+}
+function vTelephones(){
+  const pend = S.pairings;
+  return `<div class="head" style="flex-direction:column;align-items:flex-start;gap:6px"><h1>Téléphones</h1>
+    <p style="margin:0" class="muted">Installez l'application sur un téléphone de la clinique, sans câble. Le téléphone doit être sur le même Wi-Fi que ce PC.</p></div>
+  <div class="cols" style="align-items:stretch">
+    <section class="install">
+      <div class="qrbox">${S.qr ? S.qr : `<div class="qrfallback"><span>Ouvrez cette adresse dans Chrome sur le téléphone :</span><b class="mono" style="word-break:break-all">${esc(S.installUrl)}</b></div>`}
+        <span class="mono" style="font-size:12px">${esc(S.installUrl)}</span></div>
+      <div style="flex:1 1 240px;display:flex;flex-direction:column;gap:16px">
+        <span class="eyebrow" style="color:var(--mint)">Installer sur un téléphone</span>
+        <h2 style="font-size:26px;line-height:1.2">Scannez avec l'appareil photo du téléphone</h2>
+        <ol class="steps">
+          <li><i>1</i><span>Le téléchargement de <b style="color:#fff">Inventaire.apk</b> démarre.</span></li>
+          <li><i>2</i><span>Touchez le fichier, autorisez l'installation, puis Installer.</span></li>
+          <li><i>3</i><span>À l'ouverture, l'application trouve ce PC toute seule. Autorisez-la ici avec le code affiché.</span></li>
+        </ol>
+        ${S.apk ? `<span style="font-size:13px;color:var(--muted-d)">Application incluse · version ${esc(S.version)}</span>` : `<span style="font-size:13px;color:#FFB4A8">L'application téléphone n'est pas incluse dans ce programme. Utilisez la version compilée par GitHub.</span>`}
+      </div>
+    </section>
+    <section class="card pair">
+      <h2>Demandes de connexion</h2>
+      ${pend.length ? pend.map(p => `<div class="pairreq"><span><b>${esc(p.name)}</b> veut se connecter à ce PC.</span>
+        <span style="font-size:13px;color:#0A4B45">Vérifiez que ce code s'affiche aussi sur le téléphone :</span>
+        <span class="code">${esc(p.code.split("").join(" "))}</span>
+        <div style="display:flex;gap:8px"><button class="btn primary" style="flex:1" data-act="approve" data-id="${esc(p.id)}">Autoriser</button><button class="btn" data-act="refuse" data-id="${esc(p.id)}">Refuser</button></div></div>`).join("")
+        : `<p class="muted" style="margin:0">Aucune demande. Ouvrez l'application sur le téléphone : la demande apparaîtra ici.</p>`}
+      <span class="muted" style="font-size:13px">Seuls les téléphones autorisés ici peuvent envoyer des produits.</span>
+    </section>
+  </div>
+  <section class="card" style="overflow-x:auto"><table style="min-width:640px"><caption style="text-align:left;padding:16px 16px 6px"><h2>Téléphones autorisés</h2></caption>
+    <thead><tr><th>Nom</th><th>État</th><th>Version</th><th>Dernière activité</th><th></th></tr></thead><tbody>
+    ${S.devices.length ? S.devices.map(d => { const on = d.last_seen && (Date.now() - new Date(d.last_seen)) < 5*60e3;
+      return `<tr><td class="pname">${esc(d.name)}</td><td><span style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:${on ? "var(--ok)" : "var(--muted)"}"><span class="dot" style="background:${on ? "#1FB57A" : "#9AA8A5"}"></span>${on ? "En ligne" : "Hors ligne"}</span></td>
+      <td class="mono" style="font-size:13px">${esc(d.version) || "—"}${d.version && d.version !== S.version ? ` <span class="pill warn">Mise à jour dispo</span>` : ""}</td><td>${d.last_seen ? ago(d.last_seen) : "—"}</td>
+      <td class="r"><button class="btn sm danger" data-act="rmdev" data-id="${d.id}">Retirer</button></td></tr>`; }).join("") : `<tr><td colspan="5" class="muted">Aucun téléphone autorisé.</td></tr>`}
+    </tbody></table></section>
+  <section class="card" style="padding:20px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;max-width:760px">
+    <label class="f" style="flex:1 1 260px">Nom de ce PC (affiché sur les téléphones)<input id="pcNameIn" value="${esc(S.pcName)}"></label>
+    <button class="btn" data-act="pcname">Renommer</button>
+  </section>`;
+}
+
+/* ---------------- editor ---------------- */
+async function openEditor(id){
+  const p = id ? S.products.find(x => x.id === id) : {nom:"", categorie:"", marque:"", lot:"", peremption:"", coffrets:1, entames:0, flacons:"", prix:"", code_barres:"", emplacement:"", photos:[]};
+  if (!p) return;
+  let hist = [];
+  if (id){ try{ hist = (await api("GET", "/api/history/" + id)).history; }catch(e){} }
+  const warnF = p.source === "estime" || p.source === "inconnu";
+  const f = (k, label, type="text", extra="") => `<label class="f ${extra}">${label}<input id="e-${k}" type="${type}" value="${esc(p[k] ?? "")}" ${type === "number" ? 'min="0" step="any"' : ""} class="${k === "lot" || k === "code_barres" ? "mono" : ""}"></label>`;
+  $("#layer").innerHTML = `<div class="scrim" data-act="close"></div>
+  <section class="panel" role="dialog" aria-modal="true" aria-labelledby="ttl">
+    <header><div style="flex-grow:1;display:flex;flex-direction:column;gap:6px">
+      ${id ? (p.a_verifier ? `<span class="eyebrow w">À vérifier · ${p.nom_propose ? "nom proposé d'après l'image" : "reçu du téléphone"}</span>` : `<span class="eyebrow">Modifier</span>`) : `<span class="eyebrow">Ajout manuel</span>`}
+      <h2 id="ttl" style="font-size:24px">${id ? esc(p.nom) : "Nouveau produit"}</h2></div>
+      <button class="btn sm" data-act="close" aria-label="Fermer">✕</button></header>
+    <form class="bd" id="eform" autocomplete="off">
+      ${p.photos && p.photos.length ? `<div class="photos">${p.photos.map(n => `<img src="/photos/${encodeURIComponent(n)}" alt="Photo du produit" data-act="zoom">`).join("")}</div>` : ""}
+      <div class="grid2">
+        <label class="f full ${p.nom_propose ? "w" : ""}">Nom du produit${p.nom_propose ? " · proposé, à valider" : ""}<input id="e-nom" value="${esc(p.nom)}" required></label>
+        <label class="f">Catégorie<input id="e-categorie" list="cats" value="${esc(p.categorie)}"></label>
+        ${f("marque","Marque")}
+        ${f("lot","N° de lot")}
+        ${f("peremption","Péremption","date")}
+        ${f("coffrets","Coffrets fermés","number")}
+        ${f("entames","Flacons entamés","number")}
+        ${f("flacons","Flacons / coffret" + (warnF ? " · estimé" : ""),"number", warnF ? "w" : "")}
+        ${f("prix","Prix (DA / coffret)","number")}
+        ${f("code_barres","Code-barres")}
+        ${f("emplacement","Emplacement")}
+      </div>
+      <datalist id="cats">${CATS.map(c => `<option value="${c}">`).join("")}</datalist>
+      ${warnF ? `<div class="note"><span style="flex-grow:1">Le nombre de flacons n'était pas imprimé. ${esc(p.detail || "L'IA l'a estimé.")}</span><a target="_blank" rel="noopener" href="https://www.google.com/search?q=${encodeURIComponent([p.marque, p.nom, "coffret flacons"].join(" "))}" style="font-weight:800;font-size:13px;flex:none">Vérifier sur Internet ↗</a></div>` : ""}
+      ${hist.length ? `<div class="hist"><span class="eyebrow" style="color:var(--muted)">Historique</span>${hist.map(h => `<span>${new Date(h.ts).toLocaleString("fr-FR",{dateStyle:"short",timeStyle:"short"})} — ${esc(h.text)}</span>`).join("")}</div>` : ""}
+    </form>
+    <footer>
+      ${id ? `<button class="btn danger" data-act="del" data-id="${id}">Supprimer la ligne</button>` : ""}
+      <span style="flex-grow:1"></span>
+      <button class="btn" data-act="close">Annuler</button>
+      <button class="btn primary" data-act="save" data-id="${id || ""}">${id && p.a_verifier ? "Valider et enregistrer" : "Enregistrer"}</button>
+    </footer>
+  </section>`;
+  $("#e-nom").focus();
+}
+function closeEditor(){ $("#layer").innerHTML = ""; }
+function formData(){
+  const g = k => $("#e-" + k).value.trim();
+  return {nom:g("nom"), categorie:g("categorie"), marque:g("marque"), lot:g("lot"), peremption:g("peremption"),
+    coffrets:g("coffrets") === "" ? 0 : +g("coffrets"), entames:g("entames") === "" ? 0 : +g("entames"),
+    flacons:g("flacons") === "" ? null : +g("flacons"), prix:g("prix") === "" ? null : +g("prix"),
+    code_barres:g("code_barres"), emplacement:g("emplacement"), valider:true};
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener("input", e => { if (e.target.id === "q"){ q = e.target.value; render(); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape"){ if ($(".zoom")) $(".zoom").remove(); else closeEditor(); } });
+document.addEventListener("submit", e => { e.preventDefault(); const b = $('[data-act="save"]'); if (b) b.click(); });
+document.addEventListener("click", async e => {
+  const t = e.target.closest("[data-act]"); if (!t) return;
+  const act = t.dataset.act, id = t.dataset.id;
+  if (["edit","close","new","zoom","cat"].includes(act) || t.tagName === "A" && t.getAttribute("href") === "#") e.preventDefault();
+  try{
+    if (act === "cat"){ catFilter = t.dataset.cat; render(); }
+    else if (act === "edit") openEditor(+id);
+    else if (act === "new") openEditor(null);
+    else if (act === "close") closeEditor();
+    else if (act === "zoom"){ const z = document.createElement("div"); z.className = "zoom"; z.innerHTML = `<img src="${t.src}" alt="">`; z.onclick = () => z.remove(); document.body.append(z); }
+    else if (/^(cof|ent)[+-]$/.test(act)){
+      const p = S.products.find(x => x.id === +id); const k = act.startsWith("cof") ? "coffrets" : "entames";
+      const v = Math.max(0, (p[k] || 0) + (act.endsWith("+") ? 1 : -1));
+      p[k] = v; render(); await api("PUT", "/api/products/" + id, {[k]: v, valider:false});
+    }
+    else if (act === "save"){
+      const d = formData();
+      if (!d.nom){ toast("Indiquez le nom du produit."); $("#e-nom").focus(); return; }
+      if (id) await api("PUT", "/api/products/" + id, d); else await api("POST", "/api/products", d);
+      closeEditor(); toast(id ? "Fiche enregistrée" : "Produit ajouté"); rev = 0;
+    }
+    else if (act === "del"){
+      if (!t.dataset.armed){ t.dataset.armed = "1"; t.textContent = "Confirmer la suppression"; return; }
+      await api("DELETE", "/api/products/" + id); closeEditor(); toast("Ligne supprimée"); rev = 0;
+    }
+    else if (act === "undo"){
+      if (!t.dataset.armed){ t.dataset.armed = "1"; t.textContent = "Confirmer l'annulation"; return; }
+      await api("POST", `/api/receptions/${id}/undo`); toast("Envoi annulé"); rev = 0;
+    }
+    else if (act === "approve"){ await api("POST", `/api/pair/${id}/approve`); toast("Téléphone autorisé"); rev = 0; }
+    else if (act === "refuse"){ await api("POST", `/api/pair/${id}/refuse`); rev = 0; }
+    else if (act === "rmdev"){
+      if (!t.dataset.armed){ t.dataset.armed = "1"; t.textContent = "Confirmer"; return; }
+      await api("DELETE", "/api/devices/" + id); toast("Téléphone retiré"); rev = 0;
+    }
+    else if (act === "pcname"){ await api("POST", "/api/settings", {pc_name: $("#pcNameIn").value}); toast("PC renommé"); rev = 0; }
+  }catch(err){ toast(err.message || "L'action a échoué"); }
+});
+
+route(); poll();
+setInterval(() => { if (flashIds.size){ flashIds.clear(); if (!$("#layer").innerHTML) render(); } }, 20000);
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+name: Construire Inventaire Clinique
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  telephone:
+    name: Application téléphone (APK)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+      - name: Compiler l'APK
+        run: |
+          cd "$(dirname "$(find . -path '*/android/settings.gradle' -not -path './.git/*' | head -1)")"
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          gradle assembleDebug --no-daemon --stacktrace
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/Inventaire.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Inventaire-telephone-apk
+          path: Inventaire.apk
+
+  pc:
+    name: Programme PC (Windows, APK inclus)
+    needs: telephone
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Inventaire-telephone-apk
+          path: apk
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Construire InventaireClinique.exe
+        shell: pwsh
+        run: |
+          $pc = (Get-ChildItem -Recurse -Filter server.py | Where-Object { $_.FullName -match '[\\/]pc[\\/]server\.py$' } | Select-Object -First 1).Directory.FullName
+          Copy-Item apk\Inventaire.apk "$pc\app.apk"
+          Set-Location $pc
+          python -m pip install --upgrade pip
+          pip install pyinstaller segno
+          pyinstaller --onefile --console --name InventaireClinique --add-data "web;web" --add-data "app.apk;." --hidden-import segno server.py
+          New-Item -ItemType Directory -Force "$env:GITHUB_WORKSPACE\livraison" | Out-Null
+          Copy-Item dist\InventaireClinique.exe "$env:GITHUB_WORKSPACE\livraison\"
+          Copy-Item LISEZMOI.txt "$env:GITHUB_WORKSPACE\livraison\"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: InventaireClinique-PC
+          path: livraison

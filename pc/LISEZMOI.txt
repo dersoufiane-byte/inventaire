@@ -1,0 +1,25 @@
+INVENTAIRE CLINIQUE — programme PC (version 2.0)
+================================================
+
+DÉMARRER
+1. Mettez InventaireClinique.exe dans un dossier fixe, par exemple C:\Inventaire
+   (le dossier « donnees » sera créé à côté : c'est votre inventaire).
+2. Double-cliquez sur InventaireClinique.exe.
+   - Si Windows affiche « Windows a protégé votre ordinateur » :
+     cliquez sur « Informations complémentaires » puis « Exécuter quand même ».
+   - Si Windows demande l'accès au réseau : cochez « Réseaux privés » et autorisez.
+3. L'interface s'ouvre dans le navigateur (http://localhost:8765).
+   Laissez la fenêtre noire ouverte pendant l'inventaire.
+
+INSTALLER L'APPLICATION SUR UN TÉLÉPHONE
+1. Le téléphone doit être sur le même Wi-Fi que le PC.
+2. Dans l'interface PC, menu « Téléphones » : scannez le QR code avec l'appareil photo du téléphone.
+3. Le fichier Inventaire.apk se télécharge : touchez-le, autorisez l'installation, puis Installer.
+4. Ouvrez l'application : elle trouve le PC. Sur le PC, menu Téléphones, vérifiez le code et cliquez sur « Autoriser ».
+5. Dans l'application, Réglages : collez votre clé Google Gemini (gratuite sur aistudio.google.com).
+
+DONNÉES
+- Inventaire : donnees\inventaire.db ; photos : donnees\photos
+- Sauvegarde automatique chaque jour : donnees\sauvegardes (30 jours gardés)
+- Export Excel au format du modèle « Inventaire » : bouton « Exporter Excel ».
+- Pour changer de PC : copiez le programme ET le dossier « donnees ».
